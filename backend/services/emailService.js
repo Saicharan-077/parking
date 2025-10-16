@@ -1,20 +1,22 @@
+// Import nodemailer library for sending emails
 const nodemailer = require('nodemailer');
 
-// Create transporter (configure with your email service)
+// Create and configure email transporter for SMTP communication
 const createTransporter = () => {
   return nodemailer.createTransporter({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: process.env.EMAIL_PORT || 587,
-    secure: false,
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com', // SMTP server hostname
+    port: process.env.EMAIL_PORT || 587, // SMTP port (587 for TLS)
+    secure: false, // Use TLS encryption
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      user: process.env.EMAIL_USER, // SMTP username
+      pass: process.env.EMAIL_PASS // SMTP password
     }
   });
 };
 
-// Email templates
+// Predefined HTML email templates for different scenarios
 const emailTemplates = {
+  // Template for vehicle registration confirmation email
   vehicleRegistration: (data) => ({
     subject: 'Vehicle Registration Confirmation - VNR Parking Pilot',
     html: `
@@ -96,6 +98,7 @@ const emailTemplates = {
     `
   }),
 
+  // Template for welcome email to new users
   welcome: (username) => ({
     subject: 'Welcome to VNR Parking Pilot!',
     html: `
@@ -143,10 +146,10 @@ const emailTemplates = {
   })
 };
 
-// Send email function
+// Function to send emails using configured transporter
 const sendEmail = async (to, template, data) => {
   try {
-    // For development, log emails instead of sending
+    // In development mode or without email credentials, log instead of sending
     if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
       console.log('📧 Email would be sent:', {
         to,
@@ -156,13 +159,17 @@ const sendEmail = async (to, template, data) => {
       return { success: true, message: 'Email logged (development mode)' };
     }
 
+    // Create email transporter instance
     const transporter = createTransporter();
+
+    // Configure email options
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to,
-      ...template(data)
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER, // Sender address
+      to, // Recipient address
+      ...template(data) // Spread template subject and HTML content
     };
 
+    // Send the email
     const info = await transporter.sendMail(mailOptions);
     console.log('📧 Email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
@@ -173,6 +180,7 @@ const sendEmail = async (to, template, data) => {
   }
 };
 
+// Export email service functions and templates
 module.exports = {
   sendEmail,
   emailTemplates
