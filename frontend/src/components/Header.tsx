@@ -6,10 +6,11 @@ import { useState, useEffect } from "react";
 
 // Import UI components
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 // Import icons from Lucide React
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Menu, X, Search } from "lucide-react";
 
 // Import logo asset
 import vnrLogo from "@/assets/vnr-logo.png";
@@ -28,6 +29,12 @@ const Header = () => {
 
   // State for current authenticated user
   const [user, setUser] = useState<UserType | null>(null);
+
+  // State for mobile menu toggle
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // State for search query
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Effect to check authentication status on mount and route changes
   useEffect(() => {
@@ -51,6 +58,7 @@ const Header = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("user");
     setUser(null); // Clear user state
+    setIsMobileMenuOpen(false); // Close mobile menu
 
     // Show logout success toast
     toast({
@@ -60,6 +68,29 @@ const Header = () => {
 
     // Navigate to home page
     navigate("/");
+  };
+
+  // Handler for mobile menu toggle
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Handler for mobile menu link click
+  const handleMobileLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  // Handler for search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to admin page with search query for admin users, otherwise to my-vehicles
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const searchPage = user.role === 'admin' ? '/admin' : '/my-vehicles';
+      navigate(`${searchPage}?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsMobileMenuOpen(false);
+      setSearchQuery("");
+    }
   };
 
   return (
@@ -84,11 +115,21 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Right side - Navigation menu */}
-          <nav className="flex items-center space-x-2">
+          {/* Mobile menu button */}
+          <button
+            onClick={toggleMobileMenu}
+            className="md:hidden p-2 rounded-lg bg-vnr-blue text-white hover:bg-vnr-blue-dark transition-colors"
+            aria-label="Toggle mobile menu"
+          >
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
+          {/* Desktop Navigation menu */}
+          <nav className="hidden md:flex items-center space-x-2">
             {/* Home navigation link */}
             <Link
               to="/"
+              onClick={handleMobileLinkClick}
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                 isActive("/")
                   ? "bg-vnr-blue-dark text-white shadow-vnr"
@@ -104,6 +145,7 @@ const Header = () => {
                 {/* Vehicle registration link */}
                 <Link
                   to="/register"
+                  onClick={handleMobileLinkClick}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                     isActive("/register")
                       ? "bg-vnr-blue-dark text-white shadow-vnr"
@@ -115,6 +157,7 @@ const Header = () => {
                 {/* User's vehicles link */}
                 <Link
                   to="/my-vehicles"
+                  onClick={handleMobileLinkClick}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                     isActive("/my-vehicles")
                       ? "bg-vnr-blue-dark text-white shadow-vnr"
@@ -156,6 +199,7 @@ const Header = () => {
                       {user.role === 'admin' && (
                         <Link
                           to="/admin"
+                          onClick={handleMobileLinkClick}
                           className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded flex items-center space-x-2"
                         >
                           <Settings className="h-4 w-4" />
@@ -181,6 +225,7 @@ const Header = () => {
                 {/* Sign up link */}
                 <Link
                   to="/signup"
+                  onClick={handleMobileLinkClick}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                     isActive("/signup")
                       ? "bg-vnr-blue-dark text-white shadow-vnr"
@@ -192,6 +237,7 @@ const Header = () => {
                 {/* Vehicle registration link */}
                 <Link
                   to="/register"
+                  onClick={handleMobileLinkClick}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                     isActive("/register")
                       ? "bg-vnr-blue-dark text-white shadow-vnr"
@@ -203,6 +249,7 @@ const Header = () => {
                 {/* Login link */}
                 <Link
                   to="/login"
+                  onClick={handleMobileLinkClick}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                     isActive("/login")
                       ? "bg-vnr-blue-dark text-white shadow-vnr"
@@ -217,6 +264,7 @@ const Header = () => {
             {/* Help link (always visible) */}
             <Link
               to="/help"
+              onClick={handleMobileLinkClick}
               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                 isActive("/help")
                   ? "bg-vnr-blue-dark text-white shadow-vnr"
@@ -226,6 +274,169 @@ const Header = () => {
               Help
             </Link>
           </nav>
+
+          {/* Mobile Navigation Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg">
+              {/* Search Bar - Only for admin users */}
+              {user?.role === 'admin' && (
+                <div className="container mx-auto px-4 py-4 border-b border-border">
+                  <form onSubmit={handleSearch} className="flex space-x-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Search vehicles..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2 w-full"
+                      />
+                    </div>
+                    <Button type="submit" className="bg-vnr-blue hover:bg-vnr-blue-dark px-4">
+                      Search
+                    </Button>
+                  </form>
+                </div>
+              )}
+
+              <nav className="container mx-auto px-4 py-4 space-y-2">
+                {/* Home navigation link */}
+                <Link
+                  to="/"
+                  onClick={handleMobileLinkClick}
+                  className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                    isActive("/")
+                      ? "bg-vnr-blue-dark text-white shadow-vnr"
+                      : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                  }`}
+                >
+                  Home
+                </Link>
+
+                {user ? (
+                  // Navigation for authenticated users
+                  <>
+                    {/* Vehicle registration link */}
+                    <Link
+                      to="/register"
+                      onClick={handleMobileLinkClick}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                        isActive("/register")
+                          ? "bg-vnr-blue-dark text-white shadow-vnr"
+                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                      }`}
+                    >
+                      Register
+                    </Link>
+                    {/* User's vehicles link */}
+                    <Link
+                      to="/my-vehicles"
+                      onClick={handleMobileLinkClick}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                        isActive("/my-vehicles")
+                          ? "bg-vnr-blue-dark text-white shadow-vnr"
+                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                      }`}
+                    >
+                      My Vehicles
+                    </Link>
+
+                    {/* User info section */}
+                    <div className="px-4 py-3 border-t border-border">
+                      <div className="flex items-center space-x-3 mb-3 p-3 border border-border rounded-lg bg-muted/50">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-foreground">{user.username}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+                            user.role === 'admin'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Admin panel link (only for admins) */}
+                      {user.role === 'admin' && (
+                        <Link
+                          to="/admin"
+                          onClick={handleMobileLinkClick}
+                          className="block px-4 py-2 text-sm hover:bg-muted rounded flex items-center space-x-2"
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      )}
+
+                      {/* Logout button */}
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-muted rounded flex items-center space-x-2 text-red-600"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  // Navigation for unauthenticated users
+                  <>
+                    {/* Sign up link */}
+                    <Link
+                      to="/signup"
+                      onClick={handleMobileLinkClick}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                        isActive("/signup")
+                          ? "bg-vnr-blue-dark text-white shadow-vnr"
+                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                      }`}
+                    >
+                      Sign Up
+                    </Link>
+                    {/* Vehicle registration link */}
+                    <Link
+                      to="/register"
+                      onClick={handleMobileLinkClick}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                        isActive("/register")
+                          ? "bg-vnr-blue-dark text-white shadow-vnr"
+                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                      }`}
+                    >
+                      Register Vehicle
+                    </Link>
+                    {/* Login link */}
+                    <Link
+                      to="/login"
+                      onClick={handleMobileLinkClick}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                        isActive("/login")
+                          ? "bg-vnr-blue-dark text-white shadow-vnr"
+                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                      }`}
+                    >
+                      Login
+                    </Link>
+                  </>
+                )}
+
+                {/* Help link (always visible) */}
+                <Link
+                  to="/help"
+                  onClick={handleMobileLinkClick}
+                  className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                    isActive("/help")
+                      ? "bg-vnr-blue-dark text-white shadow-vnr"
+                      : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                  }`}
+                >
+                  Help
+                </Link>
+              </nav>
+            </div>
+          )}
         </div>
       </div>
     </header>

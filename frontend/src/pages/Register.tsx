@@ -87,22 +87,22 @@ const Register = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-vnr-blue-muted/10 to-background py-8">
+    <main className="min-h-screen bg-gradient-to-br from-background via-vnr-blue-muted/10 to-background py-6 md:py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8 vnr-fade-in">
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+          <div className="text-center mb-6 md:mb-8 vnr-fade-in">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 md:mb-4">
               Register Your Vehicle
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base md:text-lg text-muted-foreground">
               Fill in the details below to register your vehicle in the VNR VJIET parking system
             </p>
           </div>
 
           {/* Registration Form */}
-          <div className="vnr-card-gradient rounded-2xl shadow-large p-8 vnr-slide-up">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="vnr-card-gradient rounded-2xl shadow-large p-6 md:p-8 vnr-slide-up">
+            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
               {/* Vehicle Type */}
               <div className="space-y-2">
                 <Label htmlFor="vehicleType" className="text-sm font-semibold text-foreground">

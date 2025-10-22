@@ -159,10 +159,10 @@ class Vehicle {
       // SQL query to calculate various vehicle statistics
       const sql = `
         SELECT
-          COUNT(*) as total_vehicles,  // Total number of vehicles
-          SUM(CASE WHEN is_ev = 1 THEN 1 ELSE 0 END) as total_ev,  // Count of electric vehicles
-          SUM(CASE WHEN vehicle_type = 'car' THEN 1 ELSE 0 END) as total_cars,  // Count of cars
-          SUM(CASE WHEN vehicle_type = 'bike' THEN 1 ELSE 0 END) as total_bikes  // Count of bikes
+          COUNT(*) as total_vehicles,
+          SUM(CASE WHEN is_ev = 1 THEN 1 ELSE 0 END) as total_ev,
+          SUM(CASE WHEN vehicle_type = 'car' THEN 1 ELSE 0 END) as total_cars,
+          SUM(CASE WHEN vehicle_type = 'bike' THEN 1 ELSE 0 END) as total_bikes
         FROM vehicles
       `;
 

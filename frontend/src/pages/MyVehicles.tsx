@@ -166,21 +166,21 @@ const MyVehicles = () => {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-vnr-blue-muted/10 to-background py-8">
+    <main className="min-h-screen bg-gradient-to-br from-background via-vnr-blue-muted/10 to-background py-6 md:py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-8 vnr-fade-in">
-          <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+        <div className="text-center mb-6 md:mb-8 vnr-fade-in">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 md:mb-4">
             My Vehicles
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base md:text-lg text-muted-foreground">
             View and manage all your registered vehicles
           </p>
         </div>
 
         {/* Vehicles Grid */}
         {vehicles && vehicles.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-7xl mx-auto">
             {vehicles.map((vehicle) => (
               <Card key={vehicle.id} className="vnr-card-gradient shadow-large hover:shadow-xl transition-all duration-300 vnr-hover-lift">
                 <CardHeader className="pb-4">
@@ -223,7 +223,7 @@ const MyVehicles = () => {
                     )}
                   </div>
 
-                  <div className="flex space-x-2 pt-4">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -265,7 +265,7 @@ const MyVehicles = () => {
 
         {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Edit Vehicle</DialogTitle>
               <DialogDescription>
