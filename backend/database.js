@@ -11,29 +11,37 @@ db.serialize(() => { // Execute database operations sequentially
   // Create vehicles table if it doesn't exist
   db.run(`
     CREATE TABLE IF NOT EXISTS vehicles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, // Auto-incrementing primary key
-      vehicle_type TEXT NOT NULL CHECK (vehicle_type IN ('car', 'bike', 'ev')), // Vehicle type with constraints
-      vehicle_number TEXT UNIQUE NOT NULL, // Unique vehicle registration number
-      model TEXT, // Vehicle model (optional)
-      color TEXT, // Vehicle color (optional)
-      is_ev BOOLEAN DEFAULT 0, // Electric vehicle flag (default false)
-      owner_name TEXT NOT NULL, // Owner's full name
-      email TEXT NOT NULL, // Owner's email address
-      employee_student_id TEXT NOT NULL, // Employee or student ID
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP, // Record creation timestamp
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP // Record update timestamp
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      vehicle_type TEXT NOT NULL CHECK (vehicle_type IN ('car', 'bike', 'ev')),
+      vehicle_number TEXT UNIQUE NOT NULL,
+      model TEXT,
+      color TEXT,
+      is_ev BOOLEAN DEFAULT 0,
+      owner_name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone_number TEXT,
+      employee_student_id TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Add phone_number column if it doesn't exist (for existing databases)
+  db.run(`ALTER TABLE vehicles ADD COLUMN phone_number TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding phone_number column:', err);
+    }
+  });
 
   // Create users table for future authentication features
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, // Auto-incrementing primary key
-      username TEXT UNIQUE NOT NULL, // Unique username
-      email TEXT UNIQUE NOT NULL, // Unique email address
-      password TEXT NOT NULL, // Hashed password
-      role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')), // User role with constraints
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP // Account creation timestamp
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 

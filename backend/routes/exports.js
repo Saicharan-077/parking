@@ -27,16 +27,11 @@ router.get('/vehicles/csv', authorizeAdmin, async (req, res) => {
     const csvWriter = createCsvWriter({
       path: 'temp_vehicles.csv', // Temporary file path
       header: [
-        { id: 'id', title: 'ID' },
-        { id: 'vehicle_type', title: 'Vehicle Type' },
         { id: 'vehicle_number', title: 'Vehicle Number' },
-        { id: 'model', title: 'Model' },
-        { id: 'color', title: 'Color' },
-        { id: 'is_ev', title: 'EV Vehicle' },
+        { id: 'vehicle_type', title: 'Vehicle Type' },
         { id: 'owner_name', title: 'Owner Name' },
         { id: 'email', title: 'Email' },
-        { id: 'employee_student_id', title: 'Employee/Student ID' },
-        { id: 'created_at', title: 'Registration Date' }
+        { id: 'phone_number', title: 'Phone Number' }
       ]
     });
 

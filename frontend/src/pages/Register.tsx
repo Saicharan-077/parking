@@ -18,6 +18,7 @@ const Register = () => {
     isEV: false,
     ownerName: "",
     email: "",
+    phoneNumber: "",
     employeeStudentId: "",
   });
 
@@ -39,6 +40,7 @@ const Register = () => {
         isEV: false,
         ownerName: "",
         email: "",
+        phoneNumber: "",
         employeeStudentId: "",
       });
     },
@@ -73,6 +75,7 @@ const Register = () => {
       is_ev: formData.isEV,
       owner_name: formData.ownerName,
       email: formData.email,
+      phone_number: formData.phoneNumber || undefined,
       employee_student_id: formData.employeeStudentId,
     };
 
@@ -208,6 +211,21 @@ const Register = () => {
                   placeholder="Enter email address"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
+                  className="h-12 rounded-lg border-2 border-input focus:border-vnr-blue"
+                />
+              </div>
+
+              {/* Phone Number */}
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber" className="text-sm font-semibold text-foreground">
+                  Phone Number
+                </Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  placeholder="Enter phone number (optional)"
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                   className="h-12 rounded-lg border-2 border-input focus:border-vnr-blue"
                 />
               </div>

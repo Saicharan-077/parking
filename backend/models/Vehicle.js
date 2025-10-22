@@ -7,16 +7,16 @@ class Vehicle {
   static create(vehicleData) {
     return new Promise((resolve, reject) => {
       // Destructure vehicle data from input
-      const { vehicle_type, vehicle_number, model, color, is_ev, owner_name, email, employee_student_id } = vehicleData;
+      const { vehicle_type, vehicle_number, model, color, is_ev, owner_name, email, phone_number, employee_student_id } = vehicleData;
 
       // SQL query to insert new vehicle record
       const sql = `
-        INSERT INTO vehicles (vehicle_type, vehicle_number, model, color, is_ev, owner_name, email, employee_student_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO vehicles (vehicle_type, vehicle_number, model, color, is_ev, owner_name, email, phone_number, employee_student_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       // Execute insert query with parameterized values
-      db.run(sql, [vehicle_type, vehicle_number, model, color, is_ev ? 1 : 0, owner_name, email, employee_student_id], function(err) {
+      db.run(sql, [vehicle_type, vehicle_number, model, color, is_ev ? 1 : 0, owner_name, email, phone_number, employee_student_id], function(err) {
         if (err) {
           reject(err); // Reject promise on error
         } else {

@@ -17,6 +17,7 @@ const validateVehicleData = [
   body('vehicle_number').isLength({ min: 1 }).withMessage('Vehicle number is required'),
   body('owner_name').isLength({ min: 1 }).withMessage('Owner name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
+  body('phone_number').optional().isLength({ min: 1 }), // Optional phone number field
   body('employee_student_id').isLength({ min: 1 }).withMessage('Employee/Student ID is required'),
   body('model').optional().isLength({ min: 1 }), // Optional model field
   body('color').optional().isLength({ min: 1 }), // Optional color field
@@ -103,6 +104,12 @@ router.get('/:id', param('id').isInt().withMessage('ID must be a number'), handl
 router.post('/', validateVehicleData, handleValidationErrors, async (req, res) => {
   try {
     const vehicleData = req.body; // Extract vehicle data from request body
+
+    // Check if user already has 2 vehicles registered
+    const userVehicles = await Vehicle.findAll(1000, 0, req.user.email);
+    if (userVehicles.length >= 2) {
+      return res.status(400).json({ error: 'Maximum of 2 vehicles allowed per user' });
+    }
 
     // Check for duplicate vehicle number before creation
     const existingVehicle = await Vehicle.findByVehicleNumber(vehicleData.vehicle_number);
