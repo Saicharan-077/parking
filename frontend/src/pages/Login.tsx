@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { authApi, LoginRequest } from "@/lib/api";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useGoogleLogin } from '@react-oauth/google';
+import Cookies from 'js-cookie';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,6 +43,47 @@ const Login = () => {
       toast({
         title: "Login Failed",
         description: error.response?.data?.error || "Invalid credentials",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const googleLoginMutation = useMutation({
+    mutationFn: authApi.googleLogin,
+    onSuccess: (data) => {
+      // Store token in localStorage
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      toast({
+        title: "Login Successful",
+        description: `Welcome, ${data.user.username}!`,
+      });
+
+      // Redirect based on user role
+      if (data.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/my-vehicles");
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Google Login Failed",
+        description: error.response?.data?.error || "Failed to login with Google",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      googleLoginMutation.mutate(tokenResponse.access_token);
+    },
+    onError: () => {
+      toast({
+        title: "Google Login Failed",
+        description: "Failed to authenticate with Google",
         variant: "destructive",
       });
     },
@@ -130,10 +173,30 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 flex items-center">
+            <div className="flex-1 border-t border-muted-foreground/20"></div>
+            <span className="px-3 text-sm text-muted-foreground">or</span>
+            <div className="flex-1 border-t border-muted-foreground/20"></div>
+          </div>
+
+          <Button
+            onClick={() => googleLogin()}
+            variant="outline"
+            className="w-full mt-4"
+            disabled={googleLoginMutation.isPending}
+          >
+            {googleLoginMutation.isPending ? "Signing In..." : "Continue with Google"}
+          </Button>
+
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              <Link to="/forgot-password" className="text-vnr-blue hover:underline font-medium">
+                Forgot your password?
+              </Link>
+            </p>
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/register" className="text-vnr-blue hover:underline font-medium">
+              <Link to="/signup" className="text-vnr-blue hover:underline font-medium">
                 Sign up here
               </Link>
             </p>

@@ -1,187 +1,244 @@
-// Import nodemailer library for sending emails
 const nodemailer = require('nodemailer');
 
-// Create and configure email transporter for SMTP communication
+// Create transporter for email sending
 const createTransporter = () => {
-  return nodemailer.createTransporter({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com', // SMTP server hostname
-    port: process.env.EMAIL_PORT || 587, // SMTP port (587 for TLS)
-    secure: false, // Use TLS encryption
+  return nodemailer.createTransport({
+    service: 'gmail',
     auth: {
-      user: process.env.EMAIL_USER, // SMTP username
-      pass: process.env.EMAIL_PASS // SMTP password
+      user: process.env.ADMIN_EMAIL,
+      pass: process.env.ADMIN_PASS
     }
   });
 };
 
-// Predefined HTML email templates for different scenarios
-const emailTemplates = {
-  // Template for vehicle registration confirmation email
-  vehicleRegistration: (data) => ({
-    subject: 'Vehicle Registration Confirmation - VNR Parking Pilot',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; padding: 30px; border-radius: 10px; text-align: center;">
-          <h1 style="margin: 0; font-size: 28px;">VNR Parking Pilot</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.9;">VNR VJIET Vehicle Management System</p>
-        </div>
+class EmailService {
+  /**
+   * Send welcome email to new user
+   * @param {string} email - User's email
+   * @param {string} name - User's name
+   */
+  async sendWelcomeEmail(email, name) {
+    try {
+      const transporter = createTransporter();
 
-        <div style="padding: 30px; background: #f8fafc; border-radius: 10px; margin-top: 20px;">
-          <h2 style="color: #1e40af; margin-bottom: 20px;">Vehicle Registration Confirmed!</h2>
-
-          <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="color: #374151; margin-bottom: 15px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">Vehicle Details</h3>
-
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280; width: 40%;">Vehicle Number:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.vehicle_number}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Vehicle Type:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.vehicle_type.toUpperCase()}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Model:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.model || 'N/A'}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Color:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.color || 'N/A'}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">EV Vehicle:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.is_ev ? 'Yes' : 'No'}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Owner Name:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.owner_name}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Email:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.email}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Student/Employee ID:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${data.employee_student_id}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Registration Date:</td>
-                <td style="padding: 8px 0; color: #1f2937;">${new Date().toLocaleDateString()}</td>
-              </tr>
-            </table>
-          </div>
-
-          <div style="margin-top: 30px; padding: 20px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <h4 style="color: #1e40af; margin: 0 0 10px 0;">Important Information</h4>
-            <ul style="margin: 0; padding-left: 20px; color: #374151;">
-              <li>Keep this email as your registration confirmation</li>
-              <li>You can view and manage your vehicles at any time</li>
-              <li>For support, contact our help desk</li>
-              <li>Follow campus parking regulations</li>
+      const mailOptions = {
+        from: process.env.ADMIN_EMAIL,
+        to: email,
+        subject: 'Welcome to VNR Parking System',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Welcome to VNR Parking System, ${name}!</h2>
+            <p>Thank you for registering with us. Your account has been successfully created.</p>
+            <p>You can now:</p>
+            <ul>
+              <li>Register your vehicles for parking</li>
+              <li>View your parking history</li>
+              <li>Manage your vehicle information</li>
             </ul>
+            <p>If you have any questions, please contact our support team.</p>
+            <br>
+            <p>Best regards,<br>VNR Parking Team</p>
           </div>
+        `
+      };
 
-          <div style="text-align: center; margin-top: 30px;">
-            <a href="http://localhost:8080/my-vehicles"
-               style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-              View My Vehicles
-            </a>
-          </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px;">
-          <p>This is an automated message from VNR Parking Pilot. Please do not reply to this email.</p>
-          <p>&copy; 2024 VNR VJIET. All rights reserved.</p>
-        </div>
-      </div>
-    `
-  }),
-
-  // Template for welcome email to new users
-  welcome: (username) => ({
-    subject: 'Welcome to VNR Parking Pilot!',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; padding: 30px; border-radius: 10px; text-align: center;">
-          <h1 style="margin: 0; font-size: 28px;">Welcome to VNR Parking Pilot!</h1>
-          <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Vehicle Management System</p>
-        </div>
-
-        <div style="padding: 30px; background: #f8fafc; border-radius: 10px; margin-top: 20px;">
-          <h2 style="color: #1e40af; margin-bottom: 20px;">Hello ${username}!</h2>
-
-          <p style="color: #374151; font-size: 16px; line-height: 1.6;">
-            Thank you for joining VNR Parking Pilot! We're excited to help you manage your vehicle registration
-            at VNR VJIET campus.
-          </p>
-
-          <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 20px 0;">
-            <h3 style="color: #1e40af; margin-bottom: 15px;">What you can do:</h3>
-            <ul style="color: #374151; padding-left: 20px;">
-              <li>Register your vehicles easily</li>
-              <li>Search and find vehicle information</li>
-              <li>Manage your vehicle details</li>
-              <li>Get instant support when needed</li>
-            </ul>
-          </div>
-
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="http://localhost:8080/register"
-               style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 10px;">
-              Register Vehicle
-            </a>
-            <a href="http://localhost:8080/help"
-               style="background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-              Get Help
-            </a>
-          </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px;">
-          <p>&copy; 2024 VNR VJIET. All rights reserved.</p>
-        </div>
-      </div>
-    `
-  })
-};
-
-// Function to send emails using configured transporter
-const sendEmail = async (to, template, data) => {
-  try {
-    // In development mode or without email credentials, log instead of sending
-    if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
-      console.log('📧 Email would be sent:', {
-        to,
-        subject: template.subject,
-        data
-      });
-      return { success: true, message: 'Email logged (development mode)' };
+      const result = await transporter.sendMail(mailOptions);
+      console.log('Welcome email sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      return { success: false, error: error.message };
     }
-
-    // Create email transporter instance
-    const transporter = createTransporter();
-
-    // Configure email options
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER, // Sender address
-      to, // Recipient address
-      ...template(data) // Spread template subject and HTML content
-    };
-
-    // Send the email
-    const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Email sent:', info.messageId);
-    return { success: true, messageId: info.messageId };
-
-  } catch (error) {
-    console.error('Email error:', error);
-    return { success: false, error: error.message };
   }
-};
 
-// Export email service functions and templates
-module.exports = {
-  sendEmail,
-  emailTemplates
-};
+  /**
+   * Send vehicle registration confirmation email
+   * @param {string} email - User's email
+   * @param {string} name - User's name
+   * @param {Object} vehicleData - Vehicle information
+   */
+  async sendVehicleRegistrationEmail(email, name, vehicleData) {
+    try {
+      const transporter = createTransporter();
+
+      const mailOptions = {
+        from: process.env.ADMIN_EMAIL,
+        to: email,
+        subject: 'Vehicle Registration Confirmation - VNR Parking',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Vehicle Registration Confirmed</h2>
+            <p>Dear ${name},</p>
+            <p>Your vehicle has been successfully registered in our parking system.</p>
+
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #2563eb;">Vehicle Details:</h3>
+              <p><strong>Vehicle Type:</strong> ${vehicleData.vehicle_type}</p>
+              <p><strong>Vehicle Number:</strong> ${vehicleData.vehicle_number}</p>
+              <p><strong>Model:</strong> ${vehicleData.model || 'Not specified'}</p>
+              <p><strong>Color:</strong> ${vehicleData.color || 'Not specified'}</p>
+              <p><strong>Electric Vehicle:</strong> ${vehicleData.is_ev ? 'Yes' : 'No'}</p>
+              <p><strong>Registration Date:</strong> ${new Date().toLocaleDateString()}</p>
+            </div>
+
+            <p>You will receive notifications about parking availability and important updates.</p>
+
+            <br>
+            <p>Best regards,<br>VNR Parking Team</p>
+          </div>
+        `
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      console.log('Vehicle registration email sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending vehicle registration email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Send admin notification for new vehicle registration
+   * @param {Object} vehicleData - Vehicle information
+   * @param {string} userEmail - User's email
+   */
+  async sendAdminNotification(vehicleData, userEmail) {
+    try {
+      const transporter = createTransporter();
+
+      const mailOptions = {
+        from: process.env.ADMIN_EMAIL,
+        to: process.env.ADMIN_EMAIL, // Send to admin
+        subject: 'New Vehicle Registration - Admin Notification',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #dc2626;">New Vehicle Registration</h2>
+            <p>A new vehicle has been registered in the system.</p>
+
+            <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;">
+              <h3 style="margin-top: 0; color: #dc2626;">Registration Details:</h3>
+              <p><strong>User Email:</strong> ${userEmail}</p>
+              <p><strong>Vehicle Type:</strong> ${vehicleData.vehicle_type}</p>
+              <p><strong>Vehicle Number:</strong> ${vehicleData.vehicle_number}</p>
+              <p><strong>Owner Name:</strong> ${vehicleData.owner_name}</p>
+              <p><strong>Model:</strong> ${vehicleData.model || 'Not specified'}</p>
+              <p><strong>Color:</strong> ${vehicleData.color || 'Not specified'}</p>
+              <p><strong>Electric Vehicle:</strong> ${vehicleData.is_ev ? 'Yes' : 'No'}</p>
+              <p><strong>Employee/Student ID:</strong> ${vehicleData.employee_student_id}</p>
+              <p><strong>Registration Date:</strong> ${new Date().toLocaleDateString()}</p>
+            </div>
+
+            <p>Please review and approve the registration if needed.</p>
+
+            <br>
+            <p>VNR Parking System</p>
+          </div>
+        `
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      console.log('Admin notification sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending admin notification:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Send status update notification
+   * @param {string} email - User's email
+   * @param {string} name - User's name
+   * @param {string} vehicleNumber - Vehicle number
+   * @param {string} status - New status
+   * @param {string} message - Additional message
+   */
+  async sendStatusUpdateEmail(email, name, vehicleNumber, status, message = '') {
+    try {
+      const transporter = createTransporter();
+
+      const mailOptions = {
+        from: process.env.ADMIN_EMAIL,
+        to: email,
+        subject: `Vehicle Status Update - ${vehicleNumber}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Vehicle Status Update</h2>
+            <p>Dear ${name},</p>
+            <p>The status of your vehicle <strong>${vehicleNumber}</strong> has been updated.</p>
+
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+              <h3 style="margin-top: 0; color: #2563eb;">Status Information:</h3>
+              <p><strong>New Status:</strong> <span style="font-weight: bold; color: ${status === 'approved' ? '#16a34a' : status === 'rejected' ? '#dc2626' : '#ca8a04'};">${status.toUpperCase()}</span></p>
+              <p><strong>Vehicle:</strong> ${vehicleNumber}</p>
+              <p><strong>Update Date:</strong> ${new Date().toLocaleDateString()}</p>
+              ${message ? `<p><strong>Message:</strong> ${message}</p>` : ''}
+            </div>
+
+            ${status === 'approved' ?
+              '<p style="color: #16a34a; font-weight: bold;">Your vehicle is now eligible for parking services.</p>' :
+              status === 'rejected' ?
+              '<p style="color: #dc2626;">Please contact support if you have questions about this decision.</p>' :
+              '<p>Your registration is being processed.</p>'
+            }
+
+            <br>
+            <p>Best regards,<br>VNR Parking Team</p>
+          </div>
+        `
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      console.log('Status update email sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending status update email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Send password reset email
+   * @param {string} email - User's email
+   * @param {string} resetToken - Password reset token
+   */
+  async sendPasswordResetEmail(email, resetToken) {
+    try {
+      const transporter = createTransporter();
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+      const mailOptions = {
+        from: process.env.ADMIN_EMAIL,
+        to: email,
+        subject: 'Password Reset Request - VNR Parking',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Password Reset Request</h2>
+            <p>You have requested to reset your password for your VNR Parking account.</p>
+            <p>Please click the link below to reset your password:</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
+            </div>
+
+            <p>If you didn't request this password reset, please ignore this email.</p>
+            <p>This link will expire in 1 hour for security reasons.</p>
+
+            <br>
+            <p>Best regards,<br>VNR Parking Team</p>
+          </div>
+        `
+      };
+
+      const result = await transporter.sendMail(mailOptions);
+      console.log('Password reset email sent successfully:', result.messageId);
+      return { success: true, messageId: result.messageId };
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+}
+
+module.exports = new EmailService();

@@ -3,7 +3,10 @@ const express = require('express'); // Web framework for routing
 const { body, param, query, validationResult } = require('express-validator'); // Validation middleware
 const Vehicle = require('../models/Vehicle'); // Vehicle model for database operations
 const { sendEmail, emailTemplates } = require('../services/emailService'); // Email service for notifications
+const { sendVehicleRegistrationSMS } = require('../services/smsService'); // SMS service for notifications
 const { authenticateToken } = require('../middleware/auth'); // Authentication middleware
+const contentAnalysisService = require('../services/contentAnalysisService'); // Content analysis service
+const emailService = require('../services/emailService'); // Enhanced email service
 
 // Create Express router instance
 const router = express.Router();
@@ -100,10 +103,49 @@ router.get('/:id', param('id').isInt().withMessage('ID must be a number'), handl
   }
 });
 
-// POST /api/vehicles - Create a new vehicle record
+// POST /api/vehicles - Create a new vehicle record with enhanced validation and notifications
 router.post('/', validateVehicleData, handleValidationErrors, async (req, res) => {
   try {
     const vehicleData = req.body; // Extract vehicle data from request body
+
+    // Analyze owner name for appropriateness
+    if (vehicleData.owner_name) {
+      const nameAnalysis = contentAnalysisService.validateContent(vehicleData.owner_name, {
+        minLength: 2,
+        maxLength: 100,
+        requireMeaningful: true
+      });
+
+      if (!nameAnalysis.isValid) {
+        return res.status(400).json({ error: `Invalid owner name: ${nameAnalysis.reason}` });
+      }
+    }
+
+    // Analyze model for appropriateness if provided
+    if (vehicleData.model) {
+      const modelAnalysis = contentAnalysisService.validateContent(vehicleData.model, {
+        minLength: 1,
+        maxLength: 50,
+        requireMeaningful: false // Model names can be short/special
+      });
+
+      if (!modelAnalysis.isValid) {
+        return res.status(400).json({ error: `Invalid model: ${modelAnalysis.reason}` });
+      }
+    }
+
+    // Analyze color for appropriateness if provided
+    if (vehicleData.color) {
+      const colorAnalysis = contentAnalysisService.validateContent(vehicleData.color, {
+        minLength: 1,
+        maxLength: 30,
+        requireMeaningful: false // Color names can be short
+      });
+
+      if (!colorAnalysis.isValid) {
+        return res.status(400).json({ error: `Invalid color: ${colorAnalysis.reason}` });
+      }
+    }
 
     // Check if user already has 2 vehicles registered
     const userVehicles = await Vehicle.findAll(1000, 0, req.user.email);
@@ -120,15 +162,30 @@ router.post('/', validateVehicleData, handleValidationErrors, async (req, res) =
     // Create new vehicle in database
     const newVehicle = await Vehicle.create(vehicleData);
 
-    // Send confirmation email to vehicle owner
+    // Send enhanced confirmation email to vehicle owner
     try {
-      await sendEmail(vehicleData.email, emailTemplates.vehicleRegistration, {
-        ...vehicleData,
-        vehicle_type: vehicleData.vehicle_type.toUpperCase()
-      });
+      await emailService.sendVehicleRegistrationEmail(vehicleData.email, vehicleData.owner_name, vehicleData);
     } catch (emailError) {
       console.error('Failed to send confirmation email:', emailError);
       // Continue with registration even if email fails
+    }
+
+    // Send admin notification
+    try {
+      await emailService.sendAdminNotification(vehicleData, req.user.email);
+    } catch (adminEmailError) {
+      console.error('Failed to send admin notification:', adminEmailError);
+      // Continue with registration even if admin email fails
+    }
+
+    // Send confirmation SMS to vehicle owner if phone number provided
+    if (vehicleData.phone_number) {
+      try {
+        await sendVehicleRegistrationSMS(vehicleData.phone_number, vehicleData.vehicle_number);
+      } catch (smsError) {
+        console.error('Failed to send confirmation SMS:', smsError);
+        // Continue with registration even if SMS fails
+      }
     }
 
     res.status(201).json(newVehicle);

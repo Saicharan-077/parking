@@ -1,37 +1,65 @@
-# TODO: Add Comments to Code Files
+# Secure Data Flow Implementation for KP-SIR-PROJECT
 
-## Backend Files
-- [x] backend/server.js: Add comments explaining imports, middleware setup, routes, error handling, and server start.
-- [x] backend/database.js: Add comments for database initialization, table creation, and exports.
-- [x] backend/routes/auth.js: Add comments for authentication routes and logic.
-- [x] backend/routes/vehicles.js: Add comments for vehicle-related routes and CRUD operations.
-- [x] backend/routes/exports.js: Add comments for export functionality.
-- [x] backend/models/Vehicle.js: Add comments for vehicle model and methods.
-- [x] backend/middleware/auth.js: Add comments for authentication middleware.
-- [x] backend/services/emailService.js: Add comments for email service functions.
-- [x] backend/scripts/createAdminUser.js: Add comments for admin user creation script.
-- [x] backend/scripts/createUserSai.js: Add comments for user creation script.
-- [x] backend/tests/: Add comments to test files if any. (No test files found)
+## Overview
+Implement secure data flow improvements based on Complaints Management System analysis, including Google OAuth, content analysis, email notifications, and enhanced security.
 
-## Frontend Files
-- [x] frontend/src/App.tsx: Add comments for app structure, routing, and components.
-- [x] frontend/src/main.tsx: Add comments for app entry point and rendering.
-- [ ] frontend/src/pages/Admin.tsx: Add comments for admin page logic.
-- [ ] frontend/src/pages/Help.tsx: Add comments for help page.
-- [ ] frontend/src/pages/Home.tsx: Add comments for home page.
-- [ ] frontend/src/pages/Login.tsx: Add comments for login page.
-- [ ] frontend/src/pages/MyVehicles.tsx: Add comments for my vehicles page.
-- [ ] frontend/src/pages/NotFound.tsx: Add comments for not found page.
-- [ ] frontend/src/pages/Register.tsx: Add comments for register page.
-- [ ] frontend/src/pages/Signup.tsx: Add comments for signup page.
-- [x] frontend/src/components/Header.tsx: Add comments for header component.
-- [x] frontend/src/components/PrivateRoute.tsx: Add comments for private route component.
-- [x] frontend/src/lib/api.ts: Add comments for API functions.
-- [x] frontend/src/lib/utils.ts: Add comments for utility functions.
-- [x] frontend/src/hooks/use-mobile.tsx: Add comments for mobile hook.
-- [x] frontend/src/hooks/use-toast.ts: Add comments for toast hook.
-- [ ] frontend/src/components/ui/: Add comments to UI components if needed (many files, prioritize key ones).
+## Implementation Plan
 
-## Followup Steps
-- [x] Run backend and frontend to ensure no syntax errors after adding comments.
-- [ ] Test functionality if possible.
+### Phase 1: Dependencies and Setup
+- [ ] Install required packages: sentiment, natural, google-auth-library, nodemailer, multer, cloudinary
+- [ ] Update package.json with new dependencies
+- [ ] Create .env template with required environment variables
+
+### Phase 2: Authentication Enhancement
+- [ ] Add Google OAuth middleware (verifyGoogleToken.js)
+- [ ] Update auth routes to support Google OAuth login
+- [ ] Modify frontend to support Google OAuth login option
+- [ ] Maintain backward compatibility with existing email/password auth
+
+### Phase 3: Content Analysis and Validation
+- [ ] Implement sentiment analysis for user inputs (vehicle descriptions, comments)
+- [ ] Add meaningfulness checks using natural language processing
+- [ ] Create content analysis service
+- [ ] Integrate validation into vehicle registration and user inputs
+
+### Phase 4: Email Notification System
+- [ ] Configure nodemailer with Gmail SMTP
+- [ ] Create email service for notifications
+- [ ] Implement email notifications for:
+  - User registration confirmation
+  - Vehicle registration notifications
+  - Status updates
+  - Admin notifications for new registrations
+
+### Phase 5: Enhanced Security and Validation
+- [ ] Strengthen input validation across all endpoints
+- [ ] Implement rate limiting for API endpoints
+- [ ] Add comprehensive error handling and logging
+- [ ] Enhance role-based access control
+
+### Phase 6: Database and Storage Improvements
+- [ ] Add image upload support with Cloudinary (if needed)
+- [ ] Implement file upload middleware with multer
+- [ ] Add audit logging for important actions
+
+### Phase 7: Frontend Updates
+- [ ] Add Google OAuth login button
+- [ ] Update forms with enhanced validation feedback
+- [ ] Add notification preferences
+- [ ] Implement better error handling on frontend
+
+### Phase 8: Testing and Deployment
+- [ ] Test all new authentication methods
+- [ ] Verify email notifications work correctly
+- [ ] Test content analysis and validation
+- [ ] Update documentation
+- [ ] Deploy with new security features
+
+## Current Status
+- [x] Website running on correct ports (backend: 6202, frontend: 3202)
+- [x] Basic authentication working
+- [x] Demo users created
+- [ ] Security enhancements not yet implemented
+
+## Next Steps
+Start with Phase 1: Install dependencies and set up environment

@@ -142,18 +142,6 @@ const Header = () => {
             {user ? (
               // Navigation for authenticated users
               <>
-                {/* Vehicle registration link */}
-                <Link
-                  to="/register"
-                  onClick={handleMobileLinkClick}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                    isActive("/register")
-                      ? "bg-vnr-blue-dark text-white shadow-vnr"
-                      : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
-                  }`}
-                >
-                  Register
-                </Link>
                 {/* User's vehicles link */}
                 <Link
                   to="/my-vehicles"
@@ -165,6 +153,18 @@ const Header = () => {
                   }`}
                 >
                   My Vehicles
+                </Link>
+                {/* Vehicle registration link */}
+                <Link
+                  to="/register"
+                  onClick={handleMobileLinkClick}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                    isActive("/register")
+                      ? "bg-vnr-blue-dark text-white shadow-vnr"
+                      : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                  }`}
+                >
+                  Register Vehicle
                 </Link>
 
                 {/* User dropdown menu */}
@@ -207,6 +207,16 @@ const Header = () => {
                         </Link>
                       )}
 
+                      {/* Profile link */}
+                      <Link
+                        to="/profile"
+                        onClick={handleMobileLinkClick}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted rounded flex items-center space-x-2"
+                      >
+                        <User className="h-4 w-4" />
+                        <span>My Profile</span>
+                      </Link>
+
                       {/* Logout button */}
                       <button
                         onClick={handleLogout}
@@ -222,30 +232,6 @@ const Header = () => {
             ) : (
               // Navigation for unauthenticated users
               <>
-                {/* Sign up link */}
-                <Link
-                  to="/signup"
-                  onClick={handleMobileLinkClick}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                    isActive("/signup")
-                      ? "bg-vnr-blue-dark text-white shadow-vnr"
-                      : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
-                  }`}
-                >
-                  Sign Up
-                </Link>
-                {/* Vehicle registration link */}
-                <Link
-                  to="/register"
-                  onClick={handleMobileLinkClick}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                    isActive("/register")
-                      ? "bg-vnr-blue-dark text-white shadow-vnr"
-                      : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
-                  }`}
-                >
-                  Register Vehicle
-                </Link>
                 {/* Login link */}
                 <Link
                   to="/login"
@@ -316,18 +302,6 @@ const Header = () => {
                 {user ? (
                   // Navigation for authenticated users
                   <>
-                    {/* Vehicle registration link */}
-                    <Link
-                      to="/register"
-                      onClick={handleMobileLinkClick}
-                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                        isActive("/register")
-                          ? "bg-vnr-blue-dark text-white shadow-vnr"
-                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
-                      }`}
-                    >
-                      Register
-                    </Link>
                     {/* User's vehicles link */}
                     <Link
                       to="/my-vehicles"
@@ -339,6 +313,18 @@ const Header = () => {
                       }`}
                     >
                       My Vehicles
+                    </Link>
+                    {/* Vehicle registration link */}
+                    <Link
+                      to="/register"
+                      onClick={handleMobileLinkClick}
+                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                        isActive("/register")
+                          ? "bg-vnr-blue-dark text-white shadow-vnr"
+                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
+                      }`}
+                    >
+                      Register Vehicle
                     </Link>
 
                     {/* User info section */}
@@ -370,6 +356,16 @@ const Header = () => {
                         </Link>
                       )}
 
+                      {/* Profile link */}
+                      <Link
+                        to="/profile"
+                        onClick={handleMobileLinkClick}
+                        className="block px-4 py-2 text-sm hover:bg-muted rounded flex items-center space-x-2"
+                      >
+                        <User className="h-4 w-4" />
+                        <span>My Profile</span>
+                      </Link>
+
                       {/* Logout button */}
                       <button
                         onClick={handleLogout}
@@ -383,30 +379,6 @@ const Header = () => {
                 ) : (
                   // Navigation for unauthenticated users
                   <>
-                    {/* Sign up link */}
-                    <Link
-                      to="/signup"
-                      onClick={handleMobileLinkClick}
-                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                        isActive("/signup")
-                          ? "bg-vnr-blue-dark text-white shadow-vnr"
-                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
-                      }`}
-                    >
-                      Sign Up
-                    </Link>
-                    {/* Vehicle registration link */}
-                    <Link
-                      to="/register"
-                      onClick={handleMobileLinkClick}
-                      className={`block px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                        isActive("/register")
-                          ? "bg-vnr-blue-dark text-white shadow-vnr"
-                          : "bg-vnr-blue text-white hover:bg-vnr-blue-dark"
-                      }`}
-                    >
-                      Register Vehicle
-                    </Link>
                     {/* Login link */}
                     <Link
                       to="/login"

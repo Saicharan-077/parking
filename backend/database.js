@@ -41,9 +41,23 @@ db.serialize(() => { // Execute database operations sequentially
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+      phone_number TEXT,
+      employee_student_id TEXT,
+      profile_picture TEXT,
+      email_verified BOOLEAN DEFAULT 0,
+      phone_verified BOOLEAN DEFAULT 0,
+      reset_token TEXT,
+      reset_token_expiry DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Add profile_picture column if it doesn't exist (for existing databases)
+  db.run(`ALTER TABLE users ADD COLUMN profile_picture TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding profile_picture column:', err);
+    }
+  });
 
   console.log('📊 Database tables initialized successfully'); // Log successful initialization
 });

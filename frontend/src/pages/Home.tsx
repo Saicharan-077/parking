@@ -21,16 +21,16 @@ const Home = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <a
-                href="/register"
+                href="/login"
                 className="inline-flex items-center justify-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold text-white bg-vnr-blue hover:bg-vnr-blue-dark rounded-xl shadow-vnr hover:shadow-xl transition-all duration-300 vnr-hover-lift"
               >
-                Register Vehicle
+                Login to Register
               </a>
               <a
-                href="/my-vehicles"
+                href="/register"
                 className="inline-flex items-center justify-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-semibold text-vnr-blue bg-vnr-blue-muted hover:bg-vnr-blue-muted/80 rounded-xl border border-vnr-blue/20 hover:border-vnr-blue/40 transition-all duration-300"
               >
-                View My Vehicles
+                Register Vehicle
               </a>
               <a
                 href="/help"

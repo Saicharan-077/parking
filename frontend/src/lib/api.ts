@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Base URL for API endpoints
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = 'http://localhost:6202/api';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -73,6 +73,9 @@ export interface User {
   username: string; // Unique username
   email: string; // User email
   role: 'user' | 'admin'; // User role
+  phone_number?: string; // Phone number (optional)
+  employee_student_id?: string; // Employee/Student ID (optional)
+  profile_picture?: string; // Profile picture URL (optional)
   created_at: string; // Account creation date
 }
 
@@ -85,9 +88,45 @@ export interface LoginRequest {
 // Registration request structure
 export interface RegisterRequest {
   username: string; // Desired username
-  email: string; // User's email
+  email: string; // User's email (must be @vnrvjiet.in)
   password: string; // User's password
+  phoneNumber?: string; // Optional phone number
+  employeeStudentId: string; // Required employee/student ID
   role?: 'user' | 'admin'; // Optional role (defaults to 'user')
+}
+
+// Profile update request structure
+export interface UpdateProfileRequest {
+  username?: string; // Updated username
+  phoneNumber?: string; // Updated phone number
+  employeeStudentId?: string; // Updated employee/student ID
+  profilePicture?: string; // Updated profile picture URL
+}
+
+// Verification request structures
+export interface SendEmailVerificationRequest {
+  email: string;
+  phoneNumber: string;
+}
+
+export interface SendPhoneVerificationRequest {
+  phoneNumber: string;
+}
+
+export interface VerifyOTPRequest {
+  email?: string;
+  phoneNumber?: string;
+  otp: string;
+}
+
+// Password reset request structures
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
 }
 
 // Authentication response structure
@@ -172,6 +211,54 @@ export const authApi = {
   // Get current authenticated user's profile
   getProfile: async (): Promise<{ user: User }> => {
     const response = await api.get<{ user: User }>('/auth/profile');
+    return response.data;
+  },
+
+  // Update current authenticated user's profile
+  updateProfile: async (profileData: UpdateProfileRequest): Promise<{ message: string; user: User }> => {
+    const response = await api.put<{ message: string; user: User }>('/auth/profile', profileData);
+    return response.data;
+  },
+
+  // Send email verification OTP
+  sendEmailVerification: async (data: SendEmailVerificationRequest): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/send-email-verification', data);
+    return response.data;
+  },
+
+  // Send phone verification OTP
+  sendPhoneVerification: async (data: SendPhoneVerificationRequest): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/send-phone-verification', data);
+    return response.data;
+  },
+
+  // Verify email OTP
+  verifyEmailOTP: async (data: VerifyOTPRequest): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/verify-email-otp', data);
+    return response.data;
+  },
+
+  // Verify phone OTP
+  verifyPhoneOTP: async (data: VerifyOTPRequest): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/verify-phone-otp', data);
+    return response.data;
+  },
+
+  // Request password reset
+  forgotPassword: async (data: ForgotPasswordRequest): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/forgot-password', data);
+    return response.data;
+  },
+
+  // Reset password with token
+  resetPassword: async (data: ResetPasswordRequest): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/reset-password', data);
+    return response.data;
+  },
+
+  // Google OAuth login
+  googleLogin: async (credential: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/google-login', { credential });
     return response.data;
   }
 };
