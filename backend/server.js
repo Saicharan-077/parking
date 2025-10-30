@@ -15,7 +15,7 @@ const exportRoutes = require('./routes/exports'); // Routes for data exports
 
 // Create Express application instance
 const app = express();
-const PORT = process.env.PORT || 6202; // Set port from environment or default to 6202
+const PORT = process.env.PORT || 6228; // Set port from environment or default to 6228
 
 // Configure Winston logger
 const logger = winston.createLogger({
