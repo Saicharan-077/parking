@@ -2,24 +2,35 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const rateLimit = require("express-rate-limit");
 const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
 
 const app = express();
 app.use(express.json());
 
+// Rate limiting configuration for OAuth endpoints
+const oauthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 10 OAuth requests per windowMs
+  message: 'Too many OAuth attempts from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(cors({
     origin: function (origin, callback) {
         const allowedOrigins = [
-            "http://localhost:3000", 
-            "http://localhost:4000", 
-            "http://localhost:6000", 
-            "http://localhost:3117",
-            "http://localhost:3119",
+            "parking.vjstartup.com",
+            "dev-parking.vjstartup.com",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:4000",
+            "http://127.0.0.1:6000",
+            "http://127.0.0.1:3117",
+            "http://127.0.0.1:3119",
             "https://dev-auth.vjstartup.com",
             "https://auth.vjstartup.com",
-            "https://dev-bus.vjstartup.com",
-            "https://dev-wall.vjstartup.com",
             /^https?:\/\/([a-zA-Z0-9-]+\.)?vjstartup\.com/
         ];
 
@@ -46,7 +57,7 @@ app.use(cookieParser());
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-app.post("/auth/google", async (req, res) => {
+app.post("/auth/google", oauthLimiter, async (req, res) => {
     const { token } = req.body;
     console.log("🔍 Debug: Received Google Token =", token);
 
@@ -67,7 +78,7 @@ app.post("/auth/google", async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
-        const isLocalhost = req.hostname === 'localhost' || req.hostname.startsWith('127.') || req.hostname === '::1';
+        const isLocalhost = req.hostname === '127.0.0.1' || req.hostname.startsWith('127.') || req.hostname === '::1';
         const cookieDomain = isLocalhost ? undefined : '.vjstartup.com'; // no domain needed for localhost
         
         // ✅ Set cookies with correct flags
@@ -142,7 +153,7 @@ app.post("/verify-token", (req, res) => {
 app.post("/logout", (req, res) => {
     console.log("🔍 Debug: Logout");
 
-    const isLocalhost = req.hostname === 'localhost' || req.hostname.startsWith('127.') || req.hostname === '::1';
+    const isLocalhost = req.hostname === '127.0.0.1' || req.hostname.startsWith('127.') || req.hostname === '::1';
     const cookieDomain = isLocalhost ? undefined : '.vjstartup.com'; // no domain needed for localhost
 
     // Clear userToken cookie for all subdomains of vjstartup.com
@@ -168,4 +179,5 @@ app.post("/logout", (req, res) => {
 });
 
 
-app.listen(3115, () => console.log("Auth Server running on port 3115"));
+const PORT = process.env.PORT || 3115;
+app.listen(PORT, () => console.log(`Auth Server running on port ${PORT}`));

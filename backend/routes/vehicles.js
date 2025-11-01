@@ -44,14 +44,20 @@ const handleValidationErrors = (req, res, next) => {
 // GET /api/vehicles - Retrieve all vehicles with optional filtering
 router.get('/', async (req, res) => {
   try {
-    // Extract pagination parameters from query
-    const { limit = 50, offset = 0 } = req.query;
+    // Extract pagination and filter parameters from query
+    const { limit = 50, offset = 0, vehicle_type, is_ev } = req.query;
     // Filter by user email for non-admin users, null for admins to see all
     const userEmail = req.user.role === 'admin' ? null : req.user.email;
     console.log('User email from token:', req.user.email);
     console.log('Filtering vehicles by email:', userEmail);
+
+    // Prepare filter options
+    const filters = {};
+    if (vehicle_type) filters.vehicle_type = vehicle_type;
+    if (is_ev !== undefined) filters.is_ev = is_ev === 'true';
+
     // Fetch vehicles from database with pagination and filtering
-    const vehicles = await Vehicle.findAll(parseInt(limit), parseInt(offset), userEmail);
+    const vehicles = await Vehicle.findAll(parseInt(limit), parseInt(offset), userEmail, filters);
     console.log('Vehicles fetched:', vehicles);
     res.json(vehicles);
   } catch (error) {
@@ -63,11 +69,17 @@ router.get('/', async (req, res) => {
 // Import admin authorization middleware
 const { authorizeAdmin } = require('../middleware/auth');
 
-// GET /api/vehicles/search?q=query - Search vehicles (admin only)
+// GET /api/vehicles/search?q=query - Search vehicles with optional filters (admin only)
 router.get('/search', authorizeAdmin, validateSearch, handleValidationErrors, async (req, res) => {
   try {
-    const { q } = req.query; // Extract search query
-    const vehicles = await Vehicle.search(q); // Perform search in database
+    const { q, vehicle_type, is_ev } = req.query; // Extract search query and filters
+
+    // Prepare filter options
+    const filters = {};
+    if (vehicle_type) filters.vehicle_type = vehicle_type;
+    if (is_ev !== undefined) filters.is_ev = is_ev === 'true';
+
+    const vehicles = await Vehicle.search(q, filters); // Perform search with filters
     res.json(vehicles);
   } catch (error) {
     console.error('Error searching vehicles:', error);

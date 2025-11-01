@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Base URL for API endpoints
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:6228/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:6228/api';
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -153,19 +153,23 @@ export const vehicleApi = {
     return response.data;
   },
 
-  // Search vehicles by query string
-  search: async (query: string): Promise<Vehicle[]> => {
-    const response = await api.get<Vehicle[]>('/vehicles/search', {
-      params: { q: query }
-    });
+  // Search vehicles by query string with optional filters
+  search: async (query: string, filters?: { vehicle_type?: string; is_ev?: boolean }): Promise<Vehicle[]> => {
+    const params: any = { q: query };
+    if (filters?.vehicle_type) params.vehicle_type = filters.vehicle_type;
+    if (filters?.is_ev !== undefined) params.is_ev = filters.is_ev;
+
+    const response = await api.get<Vehicle[]>('/vehicles/search', { params });
     return response.data;
   },
 
-  // Get all vehicles with pagination
-  getAll: async (limit = 50, offset = 0): Promise<Vehicle[]> => {
-    const response = await api.get<Vehicle[]>('/vehicles', {
-      params: { limit, offset }
-    });
+  // Get all vehicles with pagination and optional filters
+  getAll: async (limit = 50, offset = 0, filters?: { vehicle_type?: string; is_ev?: boolean }): Promise<Vehicle[]> => {
+    const params: any = { limit, offset };
+    if (filters?.vehicle_type) params.vehicle_type = filters.vehicle_type;
+    if (filters?.is_ev !== undefined) params.is_ev = filters.is_ev.toString();
+
+    const response = await api.get<Vehicle[]>('/vehicles', { params });
     return response.data;
   },
 

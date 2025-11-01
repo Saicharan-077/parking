@@ -54,21 +54,36 @@ class Vehicle {
     });
   }
 
-  // Search vehicles across multiple fields for flexible querying
-  static search(searchTerm) {
+  // Search vehicles across multiple fields for flexible querying with optional filters
+  static search(searchTerm, filters = {}) {
     return new Promise((resolve, reject) => {
       // Normalize search term by removing spaces for better matching
       const normalizedSearchTerm = searchTerm.replace(/\s+/g, '');
 
-      // SQL query to search across vehicle number, owner name, email, and employee/student ID
-      const sql = `
+      // Base SQL query to search across vehicle number, owner name, email, and employee/student ID
+      let sql = `
         SELECT * FROM vehicles
-        WHERE REPLACE(vehicle_number, ' ', '') LIKE ? OR REPLACE(owner_name, ' ', '') LIKE ? OR email LIKE ? OR employee_student_id LIKE ?
-        ORDER BY created_at DESC
+        WHERE (REPLACE(vehicle_number, ' ', '') LIKE ? OR REPLACE(owner_name, ' ', '') LIKE ? OR email LIKE ? OR employee_student_id LIKE ?)
       `;
+      let params = [`%${normalizedSearchTerm}%`, `%${normalizedSearchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`];
 
-      // Execute search query with wildcard patterns
-      db.all(sql, [`%${normalizedSearchTerm}%`, `%${normalizedSearchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`], (err, rows) => {
+      // Add vehicle type filter
+      if (filters.vehicle_type) {
+        sql += ' AND vehicle_type = ?';
+        params.push(filters.vehicle_type);
+      }
+
+      // Add EV filter
+      if (filters.is_ev !== undefined) {
+        sql += ' AND is_ev = ?';
+        params.push(filters.is_ev ? 1 : 0);
+      }
+
+      // Add ordering
+      sql += ' ORDER BY created_at DESC';
+
+      // Execute search query with wildcard patterns and filters
+      db.all(sql, params, (err, rows) => {
         if (err) {
           reject(err); // Reject on database error
         } else {
@@ -78,17 +93,35 @@ class Vehicle {
     });
   }
 
-  // Retrieve all vehicles with pagination and optional email filtering
-  static findAll(limit = 50, offset = 0, email = null) {
+  // Retrieve all vehicles with pagination, email filtering, and additional filters
+  static findAll(limit = 50, offset = 0, email = null, filters = {}) {
     return new Promise((resolve, reject) => {
       // Base SQL query for selecting all vehicles
       let sql = 'SELECT * FROM vehicles';
       let params = [];
+      let whereConditions = [];
 
       // Add email filter if provided (for user-specific queries)
       if (email) {
-        sql += ' WHERE email = ?';
+        whereConditions.push('email = ?');
         params.push(email);
+      }
+
+      // Add vehicle type filter
+      if (filters.vehicle_type) {
+        whereConditions.push('vehicle_type = ?');
+        params.push(filters.vehicle_type);
+      }
+
+      // Add EV filter
+      if (filters.is_ev !== undefined) {
+        whereConditions.push('is_ev = ?');
+        params.push(filters.is_ev ? 1 : 0);
+      }
+
+      // Combine WHERE conditions
+      if (whereConditions.length > 0) {
+        sql += ' WHERE ' + whereConditions.join(' AND ');
       }
 
       // Add ordering, limit, and offset for pagination

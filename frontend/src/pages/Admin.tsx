@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { exportApi, vehicleApi, Vehicle } from "@/lib/api";
-import { Download, FileText, BarChart3, Users, Car, Zap, Search, Palette } from "lucide-react";
+import { Download, FileText, BarChart3, Users, Car, Zap, Search, Palette, Filter } from "lucide-react";
 
 
 const Admin = () => {
@@ -19,6 +20,8 @@ const Admin = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Vehicle[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>('all');
+  const [evFilter, setEvFilter] = useState<string>('all');
 
   // Fetch statistics
   const { data: stats } = useQuery({
@@ -88,14 +91,23 @@ const Admin = () => {
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults(null);
-      return;
-    }
-
     setIsSearching(true);
     try {
-      const results = await vehicleApi.search(searchQuery.trim());
+      let results: Vehicle[];
+
+      // Prepare filters
+      const filters: any = {};
+      if (vehicleTypeFilter !== 'all') filters.vehicle_type = vehicleTypeFilter;
+      if (evFilter !== 'all') filters.is_ev = evFilter === 'ev';
+
+      if (searchQuery.trim()) {
+        // Use search API with filters if there's a search query
+        results = await vehicleApi.search(searchQuery.trim(), filters);
+      } else {
+        // Use getAll with filters if no search query
+        results = await vehicleApi.getAll(1000, 0, filters);
+      }
+
       setSearchResults(results);
     } catch (error: any) {
       toast({
@@ -111,6 +123,8 @@ const Admin = () => {
 
   const handleClearSearch = () => {
     setSearchQuery('');
+    setVehicleTypeFilter('all');
+    setEvFilter('all');
     setSearchResults(null);
   };
 
@@ -129,68 +143,158 @@ const Admin = () => {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Search className="h-5 w-5" />
-            <span>Search Vehicles</span>
+            <span>Search & Filter Vehicles</span>
           </CardTitle>
           <CardDescription>
-            Search vehicles by vehicle number, owner name, email, or employee/student ID
+            Search vehicles by text or filter by vehicle type and EV status
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-2 mb-4">
-            <Input
-              type="text"
-              placeholder="Enter search query"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch();
-                }
-              }}
-            />
-            <Button onClick={handleSearch} disabled={isSearching}>
-              Search
-            </Button>
-            <Button variant="outline" onClick={handleClearSearch} disabled={isSearching && !searchQuery}>
-              Clear
-            </Button>
+          <div className="space-y-4">
+            {/* Search Input */}
+            <div className="flex space-x-2">
+              <Input
+                type="text"
+                placeholder="Enter search query (vehicle number, owner name, email, or ID)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button onClick={handleSearch} disabled={isSearching}>
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+              <Button variant="outline" onClick={handleClearSearch} disabled={isSearching && !searchQuery && vehicleTypeFilter === 'all' && evFilter === 'all'}>
+                Clear
+              </Button>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">Vehicle Type</label>
+                <Select value={vehicleTypeFilter} onValueChange={setVehicleTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All vehicle types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="car">Cars</SelectItem>
+                    <SelectItem value="bike">Bikes</SelectItem>
+                    <SelectItem value="ev">Electric Vehicles</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">EV Status</label>
+                <Select value={evFilter} onValueChange={setEvFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All vehicles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Vehicles</SelectItem>
+                    <SelectItem value="ev">Electric Vehicles Only</SelectItem>
+                    <SelectItem value="non-ev">Non-Electric Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  variant="outline"
+                  className="h-10"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Apply Filters
+                </Button>
+              </div>
+            </div>
           </div>
 
           {searchResults && searchResults.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Vehicle Number</TableHead>
-                  <TableHead>Owner Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Employee/Student ID</TableHead>
-                  <TableHead>Vehicle Type</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Color</TableHead>
-                  <TableHead>EV</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {searchResults.map((vehicle) => (
-                  <TableRow key={vehicle.id}>
-                    <TableCell>{vehicle.id}</TableCell>
-                    <TableCell>{vehicle.vehicle_number}</TableCell>
-                    <TableCell>{vehicle.owner_name}</TableCell>
-                    <TableCell>{vehicle.email}</TableCell>
-                    <TableCell>{vehicle.employee_student_id}</TableCell>
-                    <TableCell>{vehicle.vehicle_type}</TableCell>
-                    <TableCell>{vehicle.model || '-'}</TableCell>
-                    <TableCell>{vehicle.color || '-'}</TableCell>
-                    <TableCell>{vehicle.is_ev ? 'Yes' : 'No'}</TableCell>
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">
+                  Results ({searchResults.length} vehicles found)
+                </h3>
+                {searchQuery && (
+                  <p className="text-sm text-muted-foreground">
+                    Search query: "{searchQuery}"
+                  </p>
+                )}
+                {!searchQuery && (vehicleTypeFilter !== 'all' || evFilter !== 'all') && (
+                  <p className="text-sm text-muted-foreground">
+                    Filters: {vehicleTypeFilter !== 'all' ? `${vehicleTypeFilter}s` : 'All types'}
+                    {evFilter !== 'all' && `, ${evFilter === 'ev' ? 'EV only' : 'Non-EV only'}`}
+                  </p>
+                )}
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Vehicle Number</TableHead>
+                    <TableHead>Owner Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Employee/Student ID</TableHead>
+                    <TableHead>Vehicle Type</TableHead>
+                    <TableHead>Model</TableHead>
+                    <TableHead>Color</TableHead>
+                    <TableHead>EV</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {searchResults.map((vehicle) => (
+                    <TableRow key={vehicle.id}>
+                      <TableCell>{vehicle.id}</TableCell>
+                      <TableCell className="font-mono">{vehicle.vehicle_number}</TableCell>
+                      <TableCell>{vehicle.owner_name}</TableCell>
+                      <TableCell>{vehicle.email}</TableCell>
+                      <TableCell>{vehicle.employee_student_id}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          vehicle.vehicle_type === 'car' ? 'bg-blue-100 text-blue-800' :
+                          vehicle.vehicle_type === 'bike' ? 'bg-green-100 text-green-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {vehicle.vehicle_type.toUpperCase()}
+                        </span>
+                      </TableCell>
+                      <TableCell>{vehicle.model || '-'}</TableCell>
+                      <TableCell>{vehicle.color || '-'}</TableCell>
+                      <TableCell>
+                        {vehicle.is_ev ? (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            EV
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Non-EV
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
 
           {searchResults && searchResults.length === 0 && (
-            <p className="text-muted-foreground">No vehicles found for the search query.</p>
+            <div className="mt-6 text-center py-8">
+              <p className="text-muted-foreground mb-2">No vehicles found matching your criteria.</p>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your search query or filters.
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
