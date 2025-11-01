@@ -155,7 +155,7 @@ const Admin = () => {
             <div className="flex space-x-2">
               <Input
                 type="text"
-                placeholder="Enter search query (vehicle number, owner name, email, or ID)"
+                placeholder="Enter search query (vehicle number, owner name, email, ID, or car model)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {

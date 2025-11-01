@@ -179,5 +179,5 @@ app.post("/logout", (req, res) => {
 });
 
 
-const PORT = process.env.PORT || 3115;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Auth Server running on port ${PORT}`));

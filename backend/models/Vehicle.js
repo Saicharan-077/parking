@@ -60,12 +60,12 @@ class Vehicle {
       // Normalize search term by removing spaces for better matching
       const normalizedSearchTerm = searchTerm.replace(/\s+/g, '');
 
-      // Base SQL query to search across vehicle number, owner name, email, and employee/student ID
+      // Base SQL query to search across vehicle number, owner name, email, employee/student ID, and model
       let sql = `
         SELECT * FROM vehicles
-        WHERE (REPLACE(vehicle_number, ' ', '') LIKE ? OR REPLACE(owner_name, ' ', '') LIKE ? OR email LIKE ? OR employee_student_id LIKE ?)
+        WHERE (REPLACE(vehicle_number, ' ', '') LIKE ? OR REPLACE(owner_name, ' ', '') LIKE ? OR email LIKE ? OR employee_student_id LIKE ? OR REPLACE(model, ' ', '') LIKE ?)
       `;
-      let params = [`%${normalizedSearchTerm}%`, `%${normalizedSearchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`];
+      let params = [`%${normalizedSearchTerm}%`, `%${normalizedSearchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`, `%${normalizedSearchTerm}%`];
 
       // Add vehicle type filter
       if (filters.vehicle_type) {
