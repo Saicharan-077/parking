@@ -53,7 +53,7 @@ export interface Vehicle {
   is_ev: boolean; // Electric vehicle flag
   owner_name: string; // Owner's full name
   email: string; // Owner's email address
-  phone_number?: string; // Phone number (optional)
+  phone_number?: string; // Phone number (optional - auto-filled from user profile)
   employee_student_id: string; // Employee or student ID
   created_at?: string; // Creation timestamp (optional)
   updated_at?: string; // Update timestamp (optional)

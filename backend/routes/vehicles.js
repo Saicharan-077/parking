@@ -120,6 +120,21 @@ router.post('/', validateVehicleData, handleValidationErrors, async (req, res) =
   try {
     const vehicleData = req.body; // Extract vehicle data from request body
 
+    // Fetch user's phone number from database if not provided
+    if (!vehicleData.phone_number) {
+      const db = require('../database');
+      const user = await new Promise((resolve, reject) => {
+        db.get('SELECT phone_number FROM users WHERE email = ?', [req.user.email], (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        });
+      });
+
+      if (user && user.phone_number) {
+        vehicleData.phone_number = user.phone_number;
+      }
+    }
+
     // Analyze owner name for appropriateness
     if (vehicleData.owner_name) {
       const nameAnalysis = contentAnalysisService.validateContent(vehicleData.owner_name, {
