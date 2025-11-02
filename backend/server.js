@@ -77,6 +77,22 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// HTTPS Enforcement Middleware
+app.use((req, res, next) => {
+  // Skip HTTPS enforcement in development
+  if (process.env.NODE_ENV === 'development') {
+    return next();
+  }
+
+  // Check if request is HTTPS
+  if (req.header('x-forwarded-proto') !== 'https' && req.protocol !== 'https') {
+    // Redirect to HTTPS
+    res.redirect(`https://${req.header('host') || req.hostname}${req.url}`);
+  } else {
+    next();
+  }
+});
+
 // Middleware setup
 app.use(helmet({
   contentSecurityPolicy: {
@@ -87,9 +103,54 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "https:"],
     },
   },
-})); // Apply security headers
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  }
+})); // Apply security headers with HSTS
 app.use(limiter); // Apply rate limiting
-app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      'http://localhost:3228',
+      'http://127.0.0.1:3228',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:4000',
+      'http://127.0.0.1:4000',
+      'http://localhost:6000',
+      'http://127.0.0.1:6000',
+      'http://localhost:3117',
+      'http://127.0.0.1:3117',
+      'http://localhost:3119',
+      'http://127.0.0.1:3119',
+      'https://parking.vjstartup.com',
+      'https://dev-parking.vjstartup.com',
+      /^https?:\/\/([a-zA-Z0-9-]+\.)?vjstartup\.com/
+    ];
+
+    // Check if the origin matches any of the allowed origins
+    const isAllowed = allowedOrigins.some((allowedOrigin) => {
+      if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return origin === allowedOrigin;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+})); // Enable Cross-Origin Resource Sharing with specific configuration
 app.use(express.json({ limit: '10mb' })); // Parse JSON request bodies with size limit
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-encoded request bodies with size limit
 

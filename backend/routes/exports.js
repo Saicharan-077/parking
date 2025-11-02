@@ -31,12 +31,19 @@ router.get('/vehicles/csv', authorizeAdmin, async (req, res) => {
         { id: 'vehicle_type', title: 'Vehicle Type' },
         { id: 'owner_name', title: 'Owner Name' },
         { id: 'email', title: 'Email' },
-        { id: 'phone_number', title: 'Phone Number' }
+        { id: 'phone_number', title: 'Phone Number' },
+        { id: 'ev_type', title: 'EV Type' }
       ]
     });
 
+    // Transform vehicle data to include EV type column
+    const transformedVehicles = vehicles.map(vehicle => ({
+      ...vehicle,
+      ev_type: vehicle.is_ev ? 'EV' : 'Non-EV'
+    }));
+
     // Generate CSV file with vehicle data
-    await csvWriter.writeRecords(vehicles);
+    await csvWriter.writeRecords(transformedVehicles);
 
     // Set HTTP headers for file download
     res.setHeader('Content-Type', 'text/csv');

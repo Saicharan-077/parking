@@ -20,8 +20,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    // Log outgoing API requests
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    // Log outgoing API requests (without port numbers for cleaner output)
+    const url = new URL(config.url || '', config.baseURL);
+    const cleanPath = url.pathname + (url.search || '');
+    console.log('API Request:', config.method?.toUpperCase(), cleanPath);
     return config;
   },
   (error) => {
@@ -89,8 +91,8 @@ export interface LoginRequest {
 export interface RegisterRequest {
   username: string; // Desired username
   email: string; // User's email (must be @vnrvjiet.in)
-  password: string; // User's password
-  phoneNumber?: string; // Optional phone number
+  password: string; // User's password (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)
+  phoneNumber: string; // Phone number (exactly 10 digits)
   employeeStudentId: string; // Required employee/student ID
   role?: 'user' | 'admin'; // Optional role (defaults to 'user')
 }
@@ -261,8 +263,10 @@ export const authApi = {
   },
 
   // Google OAuth login
-  googleLogin: async (credential: string): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>('/auth/google-login', { credential });
+  googleLogin: async (accessToken: string): Promise<AuthResponse> => {
+    const response = await api.post<AuthResponse>('/auth/google-login', {}, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
     return response.data;
   }
 };

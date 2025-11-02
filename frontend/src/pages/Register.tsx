@@ -57,7 +57,7 @@ const Register = () => {
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.vehicleType || !formData.vehicleNumber || !formData.ownerName || !formData.email || !formData.employeeStudentId) {
+    if (!formData.vehicleType || !formData.vehicleNumber || !formData.ownerName || !formData.email || !formData.phoneNumber || !formData.employeeStudentId) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -75,7 +75,7 @@ const Register = () => {
       is_ev: formData.isEV,
       owner_name: formData.ownerName,
       email: formData.email,
-      phone_number: formData.phoneNumber || undefined,
+      phone_number: formData.phoneNumber,
       employee_student_id: formData.employeeStudentId,
     };
 
@@ -218,15 +218,16 @@ const Register = () => {
               {/* Phone Number */}
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber" className="text-sm font-semibold text-foreground">
-                  Phone Number
+                  Phone Number *
                 </Label>
                 <Input
                   id="phoneNumber"
                   type="tel"
-                  placeholder="Enter phone number (optional)"
+                  placeholder="Enter phone number (e.g., +91XXXXXXXXXX)"
                   value={formData.phoneNumber}
                   onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                   className="h-12 rounded-lg border-2 border-input focus:border-vnr-blue"
+                  required
                 />
               </div>
 

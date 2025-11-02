@@ -107,6 +107,107 @@
     transform: translateY(-4px);
     box-shadow: var(--shadow-vnr);
   }
+
+  /* Responsive Design Utilities */
+  .vnr-container {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Mobile-first responsive grid */
+  .vnr-grid-responsive {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Flexbox responsive utilities */
+  .vnr-flex-responsive {
+    @apply flex flex-col sm:flex-row gap-4;
+  }
+
+  /* Button states with smooth transitions */
+  .vnr-btn-primary {
+    @apply bg-primary text-primary-foreground rounded-lg px-6 py-3 font-medium
+           transition-all duration-300 ease-in-out
+           hover:bg-primary-hover hover:shadow-lg hover:scale-105
+           active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+
+  .vnr-btn-secondary {
+    @apply bg-secondary text-secondary-foreground rounded-lg px-6 py-3 font-medium
+           transition-all duration-300 ease-in-out
+           hover:bg-secondary/80 hover:shadow-md hover:scale-105
+           active:scale-95 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  }
+
+  /* Input states with focus styles */
+  .vnr-input {
+    @apply w-full px-4 py-3 rounded-lg border border-input bg-background
+           transition-all duration-300 ease-in-out
+           placeholder:text-muted-foreground
+           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+           hover:border-primary/50
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Card components with hover effects */
+  .vnr-card {
+    @apply bg-card text-card-foreground rounded-xl border border-border
+           shadow-soft transition-all duration-300 ease-in-out
+           hover:shadow-medium hover:scale-[1.02] hover:border-primary/20;
+  }
+
+  .vnr-card-glass {
+    @apply vnr-glass rounded-xl shadow-soft
+           transition-all duration-300 ease-in-out
+           hover:shadow-medium hover:scale-[1.02];
+  }
+
+  /* Interactive elements */
+  .vnr-interactive {
+    @apply transition-all duration-300 ease-in-out cursor-pointer;
+  }
+
+  .vnr-interactive:hover {
+    @apply scale-105 shadow-lg;
+  }
+
+  .vnr-interactive:active {
+    @apply scale-95;
+  }
+
+  /* Loading animations */
+  .vnr-pulse {
+    animation: vnr-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .vnr-bounce {
+    animation: vnr-bounce 1s infinite;
+  }
+
+  /* Accessibility improvements */
+  .vnr-focus-visible {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  /* Responsive breakpoints */
+  @media (max-width: 640px) {
+    .vnr-container {
+      @apply px-4;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .vnr-grid-responsive {
+      @apply grid-cols-1 sm:grid-cols-2;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .vnr-grid-responsive {
+      @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+    }
+  }
 }
 
 @layer components {
@@ -145,5 +246,29 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes vnr-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes vnr-bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -30px, 0);
+  }
+  70% {
+    transform: translate3d(0, -15px, 0);
+  }
+  90% {
+    transform: translate3d(0, -4px, 0);
   }
 }

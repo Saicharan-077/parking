@@ -2,11 +2,53 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const session = require("express-session");
 const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
 
 const app = express();
+
+// HTTPS Enforcement Middleware
+app.use((req, res, next) => {
+  // Skip HTTPS enforcement in development
+  if (process.env.NODE_ENV === 'development') {
+    return next();
+  }
+
+  // Check if request is HTTPS
+  if (req.header('x-forwarded-proto') !== 'https' && req.protocol !== 'https') {
+    // Redirect to HTTPS
+    res.redirect(`https://${req.header('host') || req.hostname}${req.url}`);
+  } else {
+    next();
+  }
+});
+
+// Security headers with HSTS
+app.use(helmet({
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-super-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true, // Prevent XSS access
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
+  },
+  name: 'auth.sid' // Change default session name
+}));
+
 app.use(express.json());
 
 // Rate limiting configuration for OAuth endpoints
@@ -72,15 +114,40 @@ app.post("/auth/google", oauthLimiter, async (req, res) => {
 
         const { email, name, picture, family_name } = payload;
 
+        // Force logout from other devices - destroy all existing sessions for this user
+        if (req.sessionStore) {
+            req.sessionStore.all((error, sessions) => {
+                if (error) {
+                    console.error('Error accessing sessions:', error);
+                    return;
+                }
+
+                Object.keys(sessions).forEach(sessionId => {
+                    const session = sessions[sessionId];
+                    if (session.user && session.user.email === email && sessionId !== req.session.id) {
+                        req.sessionStore.destroy(sessionId, (err) => {
+                            if (err) console.error('Error destroying session:', err);
+                        });
+                    }
+                });
+            });
+        }
+
         // ✅ Generate new JWT for internal authentication
         const userToken = jwt.sign(
             { email, name, picture, family_name },
             process.env.JWT_SECRET,
             { expiresIn: "30d" }
         );
+
+        // Store user info in server-side session
+        req.session.user = { email, name, picture, family_name };
+        req.session.authenticated = true;
+        req.session.lastActivity = Date.now();
+
         const isLocalhost = req.hostname === '127.0.0.1' || req.hostname.startsWith('127.') || req.hostname === '::1';
         const cookieDomain = isLocalhost ? undefined : '.vjstartup.com'; // no domain needed for localhost
-        
+
         // ✅ Set cookies with correct flags
        // Set userToken cookie
 res.cookie("userToken", userToken, {
@@ -91,7 +158,7 @@ res.cookie("userToken", userToken, {
     sameSite: "Lax",
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
-  
+
   // Set user info cookie
   res.cookie("user", JSON.stringify({ email, name, picture, family_name }), {
     domain: cookieDomain,       // ✅ dynamic
@@ -100,7 +167,7 @@ res.cookie("userToken", userToken, {
     sameSite: "Lax",
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
-  
+
         console.log("✅ Cookies Set in Response Headers:", res.getHeaders()['set-cookie']);
 
         res.json({ token: userToken, user: { email, name, picture ,family_name} });
@@ -117,16 +184,32 @@ res.cookie("userToken", userToken, {
 
 app.get("/check-auth", (req, res) => {
     console.log("🔍 Debug: Received Check-auth ");
-    const token = req.cookies.userToken;
 
+    // Check server-side session first
+    if (req.session.authenticated && req.session.user) {
+        // Update last activity
+        req.session.lastActivity = Date.now();
+        return res.json({ logged_in: true, user: req.session.user });
+    }
+
+    // Fallback to JWT token check
+    const token = req.cookies.userToken;
     if (!token) {
         return res.json({ logged_in: false });
     }
 
     try {
         const user = jwt.verify(token, process.env.JWT_SECRET);
+        // Sync session with JWT if session is missing
+        if (!req.session.authenticated) {
+            req.session.user = user;
+            req.session.authenticated = true;
+            req.session.lastActivity = Date.now();
+        }
         res.json({ logged_in: true, user });
     } catch (error) {
+        // Clear invalid session
+        req.session.destroy();
         res.json({ logged_in: false });
     }
 });
@@ -153,11 +236,18 @@ app.post("/verify-token", (req, res) => {
 app.post("/logout", (req, res) => {
     console.log("🔍 Debug: Logout");
 
+    // Destroy server-side session
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Session destruction error:', err);
+        }
+    });
+
     const isLocalhost = req.hostname === '127.0.0.1' || req.hostname.startsWith('127.') || req.hostname === '::1';
     const cookieDomain = isLocalhost ? undefined : '.vjstartup.com'; // no domain needed for localhost
 
     // Clear userToken cookie for all subdomains of vjstartup.com
-    res.cookie("userToken", "", { 
+    res.cookie("userToken", "", {
         domain: cookieDomain,    // ✅ dynamic domain
         path: "/",               // Applies to the entire domain
         expires: new Date(0),    // Set expiry date in the past to delete the cookie
@@ -167,9 +257,9 @@ app.post("/logout", (req, res) => {
     });
 
     // Optionally, clear the 'user' cookie as well
-    res.cookie("user", "", { 
+    res.cookie("user", "", {
         domain: cookieDomain,    // ✅ dynamic domain
-        path: "/", 
+        path: "/",
         expires: new Date(0),
         secure: !isLocalhost,    // ✅ true if HTTPS (production)
         sameSite: "Lax"

@@ -44,7 +44,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         {/* Browser router for client-side navigation */}
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <div className="min-h-screen bg-background">
             {/* Application header */}
             <Header />

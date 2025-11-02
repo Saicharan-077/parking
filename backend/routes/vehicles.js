@@ -20,7 +20,7 @@ const validateVehicleData = [
   body('vehicle_number').isLength({ min: 1 }).withMessage('Vehicle number is required'),
   body('owner_name').isLength({ min: 1 }).withMessage('Owner name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
-  body('phone_number').optional().isLength({ min: 1 }), // Optional phone number field
+  body('phone_number').isLength({ min: 1 }).withMessage('Phone number is required'), // Required phone number field
   body('employee_student_id').isLength({ min: 1 }).withMessage('Employee/Student ID is required'),
   body('model').optional().isLength({ min: 1 }), // Optional model field
   body('color').optional().isLength({ min: 1 }), // Optional color field
@@ -120,20 +120,7 @@ router.post('/', validateVehicleData, handleValidationErrors, async (req, res) =
   try {
     const vehicleData = req.body; // Extract vehicle data from request body
 
-    // Fetch user's phone number from database if not provided
-    if (!vehicleData.phone_number) {
-      const db = require('../database');
-      const user = await new Promise((resolve, reject) => {
-        db.get('SELECT phone_number FROM users WHERE email = ?', [req.user.email], (err, row) => {
-          if (err) reject(err);
-          else resolve(row);
-        });
-      });
-
-      if (user && user.phone_number) {
-        vehicleData.phone_number = user.phone_number;
-      }
-    }
+    // Phone number is now required, no need to fetch from database
 
     // Analyze owner name for appropriateness
     if (vehicleData.owner_name) {

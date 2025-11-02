@@ -137,8 +137,8 @@ router.post('/register', [
     }
     return true;
   }),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('phoneNumber').optional().isLength({ min: 10 }).withMessage('Please provide a valid phone number'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters').matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/).withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+  body('phoneNumber').isLength({ min: 10, max: 10 }).withMessage('Phone number must be exactly 10 digits').isNumeric().withMessage('Phone number must contain only digits'),
   body('employeeStudentId').isLength({ min: 1 }).withMessage('Employee/Student ID is required')
 ], async (req, res) => {
   try {
@@ -479,7 +479,7 @@ router.post('/google-login', verifyGoogleToken, async (req, res) => {
 router.post('/signup', [
   body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
   body('email').isEmail().withMessage('Please provide a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters').matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/).withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
   body('employeeStudentId').notEmpty().withMessage('Employee/Student ID is required')
 ], async (req, res) => {
   try {
