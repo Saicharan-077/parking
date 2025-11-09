@@ -2,6 +2,10 @@ const nodemailer = require('nodemailer');
 
 // Create transporter for email sending
 const createTransporter = () => {
+  if (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASS) {
+    throw new Error('Email credentials not configured');
+  }
+  
   return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -11,8 +15,10 @@ const createTransporter = () => {
       pass: process.env.ADMIN_PASS
     },
     tls: {
-      rejectUnauthorized: false
-    }
+      rejectUnauthorized: true, // Enforce certificate validation
+      minVersion: 'TLSv1.2' // Enforce minimum TLS version
+    },
+    requireTLS: true // Require TLS encryption
   });
 };
 

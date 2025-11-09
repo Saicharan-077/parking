@@ -2,9 +2,9 @@ const axios = require('axios');
 
 async function testLogin() {
   try {
-    const response = await axios.post('http://localhost:5001/api/auth/login', {
-      email: 'mani@example.com',
-      password: 'mani123'
+    const response = await axios.post('http://localhost:5001/api/v1/auth/login', {
+      email: process.env.TEST_EMAIL || 'test@example.com',
+      password: process.env.TEST_PASSWORD || 'testpassword123'
     });
     console.log('Login successful:', response.data);
   } catch (error) {

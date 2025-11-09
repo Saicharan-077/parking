@@ -10,11 +10,10 @@ const { authenticateToken, authorizeAdmin } = require('../middleware/auth'); // 
 // Create Express router instance
 const router = express.Router();
 
-// Apply authentication middleware to all export routes
-router.use(authenticateToken);
+// Note: Authentication applied selectively per route
 
 // GET /api/exports/vehicles/csv - Export vehicle data as CSV file (admin only)
-router.get('/vehicles/csv', authorizeAdmin, async (req, res) => {
+router.get('/vehicles/csv', authenticateToken, authorizeAdmin, async (req, res) => {
   try {
     // Retrieve all vehicles from database for export (up to 1000 records)
     const vehicles = await Vehicle.findAll(1000, 0);
@@ -65,7 +64,7 @@ router.get('/vehicles/csv', authorizeAdmin, async (req, res) => {
 });
 
 // GET /api/exports/vehicles/pdf - Export vehicle data as PDF report (admin only)
-router.get('/vehicles/pdf', authorizeAdmin, async (req, res) => {
+router.get('/vehicles/pdf', authenticateToken, authorizeAdmin, async (req, res) => {
   try {
     // Retrieve all vehicles from database for export
     const vehicles = await Vehicle.findAll(1000, 0);
@@ -167,8 +166,8 @@ router.get('/vehicles/pdf', authorizeAdmin, async (req, res) => {
   }
 });
 
-// GET /api/exports/stats - Retrieve export statistics (admin only)
-router.get('/stats', authorizeAdmin, async (req, res) => {
+// GET /api/exports/stats - Retrieve export statistics
+router.get('/stats', async (req, res) => {
   try {
     // Get vehicle statistics from database
     const stats = await Vehicle.getStats();

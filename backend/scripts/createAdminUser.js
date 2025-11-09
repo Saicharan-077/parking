@@ -4,10 +4,13 @@ const db = require('../database'); // Database connection module
 
 // Asynchronous function to create an admin user in the database
 async function createAdminUser() {
-  // Define admin user credentials
-  const username = 'mani';
-  const email = 'mani@example.com';
-  const password = 'mani123';
+  // Define admin user credentials from environment variables
+  const username = process.env.ADMIN_USERNAME || 'admin';
+  const email = process.env.ADMIN_EMAIL || 'admin@vnrvjiet.in';
+  const password = process.env.ADMIN_PASSWORD || (() => {
+    console.error('ADMIN_PASSWORD environment variable is required');
+    process.exit(1);
+  })();
   const role = 'admin';
 
   try {

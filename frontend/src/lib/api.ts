@@ -2,11 +2,15 @@
 import axios from 'axios';
 
 // Base URL for API endpoints
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:6228/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:6228/api/v1';
+
+// Add request timeout
+const REQUEST_TIMEOUT = 10000; // 10 seconds
 
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: REQUEST_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },

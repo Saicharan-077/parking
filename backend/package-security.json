@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "xss": "^1.0.14",
+    "redis": "^4.6.0",
+    "compression": "^1.7.4",
+    "express-mongo-sanitize": "^2.2.0"
+  }
+}

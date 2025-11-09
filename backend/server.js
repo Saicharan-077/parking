@@ -8,14 +8,31 @@ const multer = require('multer'); // File upload middleware
 const path = require('path'); // Node.js path module
 require('dotenv').config(); // Load environment variables from .env file
 
+// Import database
+const db = require('./database'); // Database connection
+const { optimizeDatabase } = require('./database-optimize');
+
 // Import route modules
 const vehicleRoutes = require('./routes/vehicles'); // Routes for vehicle operations
 const authRoutes = require('./routes/auth'); // Routes for authentication
 const exportRoutes = require('./routes/exports'); // Routes for data exports
 
+// Import security middleware
+const { securityHeaders, corsConfig } = require('./middleware/security');
+const { sanitizeInputs } = require('./middleware/sanitization');
+const { csrfProtection, getCSRFToken } = require('./middleware/csrf');
+const { apiVersioning } = require('./middleware/versioning');
+const { globalErrorHandler, AppError } = require('./middleware/errorHandler');
+const { performanceMonitor } = require('./middleware/performance');
+const { securityResponseHeaders } = require('./middleware/security-headers');
+const compression = require('compression');
+const mongoSanitize = require('express-mongo-sanitize');
+
 // Create Express application instance
 const app = express();
 const PORT = process.env.PORT || 6228; // Set port from environment or default to 6228
+
+
 
 // Configure Winston logger
 const logger = winston.createLogger({
@@ -68,89 +85,32 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Stricter rate limiting for auth endpoints
+// Auth rate limiting
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 5 : 50, // Higher limit for development
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// HTTPS Enforcement Middleware
-app.use((req, res, next) => {
-  // Skip HTTPS enforcement in development
-  if (process.env.NODE_ENV === 'development') {
-    return next();
-  }
 
-  // Check if request is HTTPS
-  if (req.header('x-forwarded-proto') !== 'https' && req.protocol !== 'https') {
-    // Redirect to HTTPS
-    res.redirect(`https://${req.header('host') || req.hostname}${req.url}`);
-  } else {
-    next();
-  }
-});
 
 // Middleware setup
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-  hsts: {
-    maxAge: 31536000, // 1 year
-    includeSubDomains: true,
-    preload: true
-  }
-})); // Apply security headers with HSTS
-app.use(limiter); // Apply rate limiting
+app.use(securityResponseHeaders);
+app.use(performanceMonitor);
+app.use(compression());
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    const allowedOrigins = [
-      'http://localhost:3228',
-      'http://127.0.0.1:3228',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://localhost:4000',
-      'http://127.0.0.1:4000',
-      'http://localhost:6000',
-      'http://127.0.0.1:6000',
-      'http://localhost:3117',
-      'http://127.0.0.1:3117',
-      'http://localhost:3119',
-      'http://127.0.0.1:3119',
-      'https://parking.vjstartup.com',
-      'https://dev-parking.vjstartup.com',
-      /^https?:\/\/([a-zA-Z0-9-]+\.)?vjstartup\.com/
-    ];
-
-    // Check if the origin matches any of the allowed origins
-    const isAllowed = allowedOrigins.some((allowedOrigin) => {
-      if (allowedOrigin instanceof RegExp) {
-        return allowedOrigin.test(origin);
-      }
-      return origin === allowedOrigin;
-    });
-
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'), false);
-    }
-  },
+  origin: ['http://localhost:3228', 'http://127.0.0.1:3228', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-})); // Enable Cross-Origin Resource Sharing with specific configuration
+}));
+app.use(helmet({ crossOriginEmbedderPolicy: false }));
+app.use(limiter);
+app.use(mongoSanitize());
+app.use(sanitizeInputs);
+app.use(apiVersioning);
 app.use(express.json({ limit: '10mb' })); // Parse JSON request bodies with size limit
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parse URL-encoded request bodies with size limit
 
@@ -160,58 +120,120 @@ app.use((req, res, next) => {
   next();
 });
 
-// Route mounting
-app.use('/api/auth', authLimiter, authRoutes); // Mount authentication routes with stricter rate limiting
-app.use('/api/vehicles', vehicleRoutes); // Mount vehicle routes at /api/vehicles
-app.use('/api/exports', exportRoutes); // Mount export routes at /api/exports
+// API routes
+app.use('/api/v1/auth', authLimiter, authRoutes);
+app.use('/api/v1/vehicles', vehicleRoutes);
+app.use('/api/v1/exports', exportRoutes);
+app.get('/api/v1/csrf-token', getCSRFToken);
 
-// Health check endpoint to verify server status
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'VNR Parking API is running' });
-});
+// Legacy routes (redirect to v1)
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/exports', exportRoutes);
 
-// Global error handling middleware
-app.use((err, req, res, next) => {
-  // Log error with Winston
-  req.logger.error('Unhandled error:', {
-    error: err.message,
-    stack: err.stack,
-    url: req.url,
-    method: req.method,
-    ip: req.ip,
-    userAgent: req.get('User-Agent')
+// API Documentation
+app.get('/api/v1/docs', (req, res) => {
+  res.json({
+    title: 'VNR Parking API Documentation',
+    version: '1.0.0',
+    description: 'Smart parking management system for VNR VJIET',
+    endpoints: {
+      auth: {
+        'POST /api/v1/auth/login': 'User login',
+        'POST /api/v1/auth/register': 'User registration',
+        'POST /api/v1/auth/forgot-password': 'Password reset request',
+        'GET /api/v1/auth/profile': 'Get user profile'
+      },
+      vehicles: {
+        'GET /api/v1/vehicles': 'List vehicles (auth required)',
+        'POST /api/v1/vehicles': 'Register vehicle (auth required)',
+        'GET /api/v1/vehicles/stats': 'Vehicle statistics (public)',
+        'GET /api/v1/vehicles/:id': 'Get vehicle details (auth required)'
+      },
+      system: {
+        'GET /api/v1/health': 'System health check',
+        'GET /api/v1/docs': 'API documentation'
+      }
+    },
+    authentication: 'Bearer JWT token in Authorization header',
+    rateLimit: '100 requests per 15 minutes (general), 50 requests per 15 minutes (auth)'
   });
-
-  // Handle multer errors
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
-    }
-    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-      return res.status(400).json({ error: 'Unexpected file field.' });
-    }
-  }
-
-  // Handle custom errors
-  if (err.message === 'Only image files are allowed') {
-    return res.status(400).json({ error: err.message });
-  }
-
-  // Handle rate limiting errors
-  if (err.status === 429) {
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-  }
-
-  // Default error response
-  res.status(500).json({ error: 'Something went wrong!' });
 });
+
+// Comprehensive health check
+app.get('/api/v1/health', async (req, res) => {
+  const health = {
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    database: 'disconnected',
+    services: {
+      auth: 'OK',
+      vehicles: 'OK',
+      exports: 'OK'
+    }
+  };
+  
+  // Test database
+  try {
+    await new Promise((resolve, reject) => {
+      db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+    health.database = 'connected';
+  } catch (err) {
+    health.status = 'ERROR';
+    health.database = 'disconnected';
+    // Log error securely, don't expose details
+    req.logger?.error('Database connection failed', { error: err.message });
+  }
+  
+  const statusCode = health.status === 'OK' ? 200 : 500;
+  res.status(statusCode).json(health);
+});
+
+// Error handling
+app.use(globalErrorHandler);
 
 // 404 handler for unmatched routes
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Start the server and listen on the specified port
-app.listen(PORT, () => {
+// Start server
+const server = app.listen(PORT, () => {
   console.log(`🚀 VNR Parking API server is running on port ${PORT}`);
+  
+  // Test database connection and optimize
+  db.get('SELECT 1', (err) => {
+    if (err) {
+      console.error('❌ Database connection failed:', err.message);
+    } else {
+      console.log('✅ Database connected successfully');
+      // Optimize database on startup
+      setTimeout(() => optimizeDatabase(), 1000);
+    }
+  });
 });
+
+// Secure process error handlers
+process.on('unhandledRejection', (err) => {
+  logger.error('Unhandled Rejection', { error: err.message });
+  server.close(() => process.exit(1));
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception', { error: err.message });
+  process.exit(1);
+});
+
+// Disable sensitive console output in production
+if (process.env.NODE_ENV === 'production') {
+  console.log = () => {};
+  console.error = () => {};
+  console.warn = () => {};
+}

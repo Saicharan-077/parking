@@ -146,9 +146,19 @@ class Vehicle {
       const fields = Object.keys(updateData);
       const values = Object.values(updateData);
 
-      // Create SET clause for SQL UPDATE statement
-      const setClause = fields.map(field => `${field} = ?`).join(', ');
-      values.push(id); // Add ID to parameters for WHERE clause
+      // Validate field names to prevent SQL injection
+      const allowedFields = ['vehicle_type', 'vehicle_number', 'model', 'color', 'is_ev', 'owner_name', 'email', 'phone_number', 'employee_student_id'];
+      const validFields = fields.filter(field => allowedFields.includes(field));
+      
+      if (validFields.length === 0) {
+        reject(new Error('No valid fields to update'));
+        return;
+      }
+
+      // Create SET clause for SQL UPDATE statement with validated fields
+      const setClause = validFields.map(field => `${field} = ?`).join(', ');
+      const validValues = validFields.map(field => updateData[field]);
+      validValues.push(id); // Add ID to parameters for WHERE clause
 
       // SQL query to update vehicle record
       const sql = `
@@ -158,7 +168,7 @@ class Vehicle {
       `;
 
       // Execute update query
-      db.run(sql, values, function(err) {
+      db.run(sql, validValues, function(err) {
         if (err) {
           reject(err); // Reject on database error
         } else if (this.changes === 0) {

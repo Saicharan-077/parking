@@ -11,20 +11,17 @@ const emailService = require('../services/emailService'); // Enhanced email serv
 // Create Express router instance
 const router = express.Router();
 
-// Apply authentication middleware to all vehicle routes
-router.use(authenticateToken);
+// Note: Authentication applied selectively per route
 
-// Validation rules for vehicle data input
+// Validation rules for vehicle data input (email and phone auto-populated from user)
 const validateVehicleData = [
   body('vehicle_type').isIn(['car', 'bike', 'ev']).withMessage('Vehicle type must be car, bike, or ev'),
   body('vehicle_number').isLength({ min: 1 }).withMessage('Vehicle number is required'),
   body('owner_name').isLength({ min: 1 }).withMessage('Owner name is required'),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('phone_number').isLength({ min: 1 }).withMessage('Phone number is required'), // Required phone number field
   body('employee_student_id').isLength({ min: 1 }).withMessage('Employee/Student ID is required'),
-  body('model').optional().isLength({ min: 1 }), // Optional model field
-  body('color').optional().isLength({ min: 1 }), // Optional color field
-  body('is_ev').optional().isBoolean() // Optional electric vehicle flag
+  body('model').optional().isLength({ min: 1 }),
+  body('color').optional().isLength({ min: 1 }),
+  body('is_ev').optional().isBoolean()
 ];
 
 // Validation rules for search queries
@@ -42,7 +39,7 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // GET /api/vehicles - Retrieve all vehicles with optional filtering
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     // Extract pagination and filter parameters from query
     const { limit = 50, offset = 0, vehicle_type, is_ev } = req.query;
@@ -70,7 +67,7 @@ router.get('/', async (req, res) => {
 const { authorizeAdmin } = require('../middleware/auth');
 
 // GET /api/vehicles/search?q=query - Search vehicles with optional filters (admin only)
-router.get('/search', authorizeAdmin, validateSearch, handleValidationErrors, async (req, res) => {
+router.get('/search', authenticateToken, authorizeAdmin, validateSearch, handleValidationErrors, async (req, res) => {
   try {
     const { q, vehicle_type, is_ev } = req.query; // Extract search query and filters
 
@@ -99,7 +96,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // GET /api/vehicles/:id - Retrieve specific vehicle by ID
-router.get('/:id', param('id').isInt().withMessage('ID must be a number'), handleValidationErrors, async (req, res) => {
+router.get('/:id', authenticateToken, param('id').isInt().withMessage('ID must be a number'), handleValidationErrors, async (req, res) => {
   try {
     const { id } = req.params; // Extract vehicle ID from URL
     const vehicle = await Vehicle.findById(id); // Find vehicle in database
@@ -116,11 +113,22 @@ router.get('/:id', param('id').isInt().withMessage('ID must be a number'), handl
 });
 
 // POST /api/vehicles - Create a new vehicle record with enhanced validation and notifications
-router.post('/', validateVehicleData, handleValidationErrors, async (req, res) => {
+router.post('/', authenticateToken, validateVehicleData, handleValidationErrors, async (req, res) => {
   try {
     const vehicleData = req.body; // Extract vehicle data from request body
 
-    // Phone number is now required, no need to fetch from database
+    // Force email and phone from authenticated user (cannot be changed)
+    const db = require('../database');
+    const user = await new Promise((resolve, reject) => {
+      db.get('SELECT email, phone_number FROM users WHERE id = ?', [req.user.id], (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+      });
+    });
+    
+    // Override any provided email/phone with user's actual data
+    vehicleData.email = user.email;
+    vehicleData.phone_number = user.phone_number || '';
 
     // Analyze owner name for appropriateness
     if (vehicleData.owner_name) {
@@ -210,7 +218,7 @@ router.post('/', validateVehicleData, handleValidationErrors, async (req, res) =
 });
 
 // PUT /api/vehicles/:id - Update an existing vehicle record
-router.put('/:id', [
+router.put('/:id', authenticateToken, [
   param('id').isInt().withMessage('ID must be a number'), // Validate ID parameter
   ...validateVehicleData // Include vehicle data validation
 ], handleValidationErrors, async (req, res) => {
@@ -242,7 +250,7 @@ router.put('/:id', [
 });
 
 // DELETE /api/vehicles/:id - Remove a vehicle record
-router.delete('/:id', param('id').isInt().withMessage('ID must be a number'), handleValidationErrors, async (req, res) => {
+router.delete('/:id', authenticateToken, param('id').isInt().withMessage('ID must be a number'), handleValidationErrors, async (req, res) => {
   try {
     const { id } = req.params; // Extract vehicle ID from URL
 

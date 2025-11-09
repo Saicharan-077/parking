@@ -4,10 +4,13 @@ const db = require('../database'); // Database connection module
 
 // Asynchronous function to create a regular user 'sai' in the database
 async function createUserSai() {
-  // Define user credentials
-  const username = 'sai';
-  const email = 'sai@example.com';
-  const password = 'sai123';
+  // Define user credentials from environment variables
+  const username = process.env.USER_USERNAME || 'testuser';
+  const email = process.env.USER_EMAIL || 'user@vnrvjiet.in';
+  const password = process.env.USER_PASSWORD || (() => {
+    console.error('USER_PASSWORD environment variable is required');
+    process.exit(1);
+  })();
   const role = 'user'; // Regular user role without admin permissions
 
   try {

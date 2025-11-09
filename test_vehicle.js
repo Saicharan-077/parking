@@ -1,12 +1,12 @@
 const http = require('http');
 
-const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwidXNlcm5hbWUiOiJtYW5pIiwicm9sZSI6ImFkbWluIiwiZW1haWwiOiJtYW5pQGV4YW1wbGUuY29tIiwiaWF0IjoxNzYwNjQwNzkxLCJleHAiOjE3NjEyNDU1OTF9.CPKOsjjLtTxjXUvWYvO9hSxzvO6JHvUqykFW49slM0U';
+const token = process.env.TEST_TOKEN || 'your-test-token-here';
 
 const data = JSON.stringify({
   vehicle_type: 'car',
   vehicle_number: 'AP1234',
   owner_name: 'Test User',
-  email: 'mani@example.com',
+  email: process.env.TEST_EMAIL || 'test@example.com',
   employee_student_id: 'EMP001',
   model: 'Toyota Camry',
   color: 'Blue'
@@ -15,7 +15,7 @@ const data = JSON.stringify({
 const options = {
   hostname: 'localhost',
   port: 5001,
-  path: '/api/vehicles',
+  path: '/api/v1/vehicles',
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

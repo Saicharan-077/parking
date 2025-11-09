@@ -96,12 +96,21 @@ const Profile = () => {
         return;
       }
 
-      // Create preview URL
+      // Create preview URL with validation
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        setProfilePicturePreview(result);
-        setFormData(prev => ({ ...prev, profilePicture: result }));
+        // Validate that the result is a proper data URL for images
+        if (result && result.startsWith('data:image/') && result.includes('base64,')) {
+          setProfilePicturePreview(result);
+          setFormData(prev => ({ ...prev, profilePicture: result }));
+        } else {
+          toast({
+            title: "Invalid File",
+            description: "Please select a valid image file.",
+            variant: "destructive",
+          });
+        }
       };
       reader.readAsDataURL(file);
     }
