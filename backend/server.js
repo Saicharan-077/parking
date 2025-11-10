@@ -101,7 +101,7 @@ app.use(securityResponseHeaders);
 app.use(performanceMonitor);
 app.use(compression());
 app.use(cors({
-  origin: ['http://localhost:3228', 'http://127.0.0.1:3228', 'http://localhost:3000'],
+  origin: ['http://localhost:3228', 'http://127.0.0.1:3228', 'http://localhost:3000','https://parking.vjstartup.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
